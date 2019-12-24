@@ -1,0 +1,36 @@
+{
+    "name": "freelancer-server",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "start-dev": "nodemon index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/lamnhh/freelancer-server.git"
+    },
+    "keywords": [
+        "Node.js",
+        "Express",
+        "PostgreSQL"
+    ],
+    "author": "Lam (lamnhh) Nguyen",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/lamnhh/freelancer-server/issues"
+    },
+    "homepage": "https://github.com/lamnhh/freelancer-server#readme",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "morgan": "^1.9.1",
+        "pg": "^7.15.1",
+        "validator": "^12.1.0"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.2"
+    }
+}
