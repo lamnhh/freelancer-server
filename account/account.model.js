@@ -1,31 +1,11 @@
 let db = require("../configs/db");
 let bcrypt = require("bcrypt");
-let { isEmail } = require("validator");
-let { isString } = require("../configs/types");
-
-function validateUserInfo({ username, password, email, phone }) {
-  if (!isString(username) || !isString(password) || !isString(email) || !isString(phone)) {
-    return "Invalid info";
-  }
-  if (username.length > 16) {
-    return "Username cannot contain more than 16 characters";
-  }
-  if (password.length < 6) {
-    return "Password must contain at least 6 characters";
-  }
-  if (!isEmail(email)) {
-    return "Email is not valid";
-  }
-  if (phone.length !== 10 || isNaN(parseInt(phone))) {
-    // Phone must be exactly 10 DIGITS long.
-    return "Phone is not valid";
-  }
-  return null;
-}
+let { normaliseString } = require("../configs/types");
+let { validateRegisterInput, validateLoginInput } = require("./account.helper");
 
 function createAccount({ username, password, email, phone }) {
   // Validate user info
-  let validationResult = validateUserInfo({ username, password, email, phone });
+  let validationResult = validateRegisterInput({ username, password, email, phone });
   if (validationResult !== null) {
     throw { http: 400, code: "INVALID_INFO", message: validationResult };
   }
@@ -34,7 +14,7 @@ function createAccount({ username, password, email, phone }) {
   return db
     .query("SELECT * FROM create_account($1, $2, $3, $4)", [username, hashedPassword, email, phone])
     .then(function({ rows }) {
-      let user = rows[0];
+      let user = normaliseString(rows[0]);
       user.username = user.username.trim();
       user.email = user.email.trim();
       delete user.password;
@@ -49,6 +29,29 @@ function createAccount({ username, password, email, phone }) {
     });
 }
 
+function login(username, password) {
+  // Validate username and password
+  let validationResult = validateLoginInput(username, password);
+  if (validationResult !== null) {
+    throw { http: 400, code: "INVALID_INFO", message: validationResult };
+  }
+
+  return db.query("SELECT * FROM accounts WHERE username=$1", [username]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw { http: 404, code: "NO_USER", message: "User does not exist" };
+    }
+    let user = normaliseString(rows[0]);
+    if (bcrypt.compareSync(password, user.password)) {
+      delete user.password;
+      delete user.is_admin;
+      return user;
+    } else {
+      throw { http: 400, code: "WRONG_PASSWORD", message: "Wrong password" };
+    }
+  });
+}
+
 module.exports = {
-  createAccount
+  createAccount,
+  login
 };
