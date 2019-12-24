@@ -43,6 +43,7 @@ router.get("/:id", function(req, res, next) {
  */
 router.post("/", adminValidator, function(req, res, next) {
   let name = req.body.name;
+  console.log(name);
   if (!isString(name) || name.length > 100) {
     next({
       http: 400,

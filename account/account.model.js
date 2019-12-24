@@ -29,7 +29,7 @@ function createAccount({ username, password, email, phone }) {
     });
 }
 
-function login(username, password) {
+function login(username, password, keepIsAdmin = false) {
   // Validate username and password
   let validationResult = validateLoginInput(username, password);
   if (validationResult !== null) {
@@ -43,7 +43,9 @@ function login(username, password) {
     let user = normaliseString(rows[0]);
     if (bcrypt.compareSync(password, user.password)) {
       delete user.password;
-      delete user.is_admin;
+      if (!keepIsAdmin) {
+        delete user.is_admin;
+      }
       return user;
     } else {
       throw { http: 400, code: "WRONG_PASSWORD", message: "Wrong password" };

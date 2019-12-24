@@ -1,5 +1,4 @@
 let { Pool } = require("pg");
-require("dotenv").config();
 
 // Connect using connection string if available.
 // Otherwise, connect using credentials.
