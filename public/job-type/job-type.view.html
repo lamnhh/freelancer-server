@@ -129,6 +129,27 @@
           </div>
         </div>
       </div>
+      <div class="modal" tabindex="-1" role="dialog" id="edit-modal">
+        <div class="modal-dialog" role="document">
+          <form class="modal-content" id="dept-form">
+            <div class="ibox-content">
+              <div class="form-group row" id="dept-id-div">
+                <label class="col-sm-12 col-form-label">
+                  <h3>Category Name</h3>
+                </label>
+                <div class="col-sm-12">
+                  <input type="text" class="form-control" name="name" id="new-name-input" required>
+                  <span class="form-text m-b-none" id="id-err" style="color: red" hidden></span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-white btn-sm" type="button" data-dismiss="modal">Cancel</button>
+              <button class="btn btn-primary btn-sm" type="submit">Update</button>
+            </div>
+          </form>
+        </div>
+      </div>
       <div class="footer">
         <div><strong>Copyright</strong> Team 12 &copy; 2019-2020</div>
       </div>
@@ -152,6 +173,16 @@
 
   <!-- Page-Level Scripts -->
   <script>
+    let currentTypeId = -1;
+    let currentRowIdx = -1;
+
+    function updateType(rowIndex, typeId, name) {
+      currentTypeId = typeId;
+      currentRowIdx = rowIndex;
+      $('#edit-modal').modal();
+      $('#new-name-input').val(name);
+    }
+
     function deleteType(rowIndex, typeId, name) {
       if (!confirm("Are you sure you want to delete `" + name + "`?")) {
         return;
@@ -176,6 +207,35 @@
         timeOut: 4000
       };
 
+      $("#dept-form").submit((e) => {
+        e.preventDefault();
+        if (currentTypeId === -1) {
+          return;
+        }
+
+        const newName = e.target.name.value;
+        fetch("/api/job-type/" + currentTypeId, {
+          method: "PATCH",
+          body: JSON.stringify({ name: newName }),
+          headers: { "Content-Type": "application/json" }
+        }).then((res) => {
+          if (res.ok) {
+            $("#edit-modal").modal("hide");
+            $(".dataTables-example").DataTable().row(currentRowIdx).data({ id: currentTypeId, name: newName }).draw();
+            return;
+          }
+          res.json().then(({ message }) => {
+            toastr.error(message, "Error");
+            $("#dept-id-div").addClass("has-message");
+            $("#id-err").show();
+            $("#id-err").text(message);
+            $("#dept-id-div input").focusout(() => {
+              $("#id-err").hide();
+              $("#dept-id-div").removeClass("has-message");
+            })
+          })
+        })
+      });
 
       $(".dataTables-example").DataTable({
         pageLength: 10,
@@ -192,7 +252,7 @@
             data: null,
             render: function (_, _, row, meta) {
               return `<div>
-                <button class="btn btn-primary">Edit</button>
+                <button class="btn btn-primary" onclick="updateType(${meta.row}, ${row.id}, '${row.name}');">Edit</button>
                 <button class="btn btn-danger" onclick="deleteType(${meta.row}, ${row.id}, '${row.name}');">Delete</button>
               </div>`;
             }
