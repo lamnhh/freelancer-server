@@ -1,12 +1,12 @@
-DROP TABLE IF EXISTS refund_requests;
-DROP TABLE IF EXISTS transactions;
-DROP TABLE IF EXISTS job_price_tiers;
-DROP TABLE IF EXISTS jobs;
-DROP TABLE IF EXISTS job_types;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS accounts;
-DROP TABLE IF EXISTS wallet_transactions;
-DROP TABLE IF EXISTS wallets;
+DROP TABLE IF EXISTS refund_requests CASCADE;
+DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS job_price_tiers CASCADE;
+DROP TABLE IF EXISTS jobs CASCADE;
+DROP TABLE IF EXISTS job_types CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS wallet_transactions CASCADE;
+DROP TABLE IF EXISTS wallets CASCADE;
 
 CREATE TABLE accounts (
 	username 	character(16),
@@ -112,3 +112,34 @@ ALTER TABLE messages
 ALTER TABLE wallet_transactions
 	ADD FOREIGN KEY (wallet_from) REFERENCES wallets(id),
 	ADD FOREIGN KEY (wallet_to) REFERENCES wallets(id);
+	
+CREATE OR REPLACE FUNCTION create_account(
+	_username character(16), 
+	_password character(60),
+	_email character(100),
+	_phone character(10)
+)
+RETURNS SETOF accounts AS
+$$
+BEGIN
+	-- 	Check if username has been used yet
+	IF EXISTS (SELECT * FROM accounts WHERE username=_username) THEN
+ 		RAISE unique_violation USING HINT = 'Username ' || _username || ' has been used';
+	END IF;
+	
+	-- 	Check if email has been used yet
+	IF EXISTS (SELECT * FROM accounts WHERE email=_email) THEN
+		RAISE unique_violation USING HINT = 'Email ' || _email || ' has been used';
+	END IF;
+	
+	-- 	Check if phone has been used yet
+	IF EXISTS (SELECT * FROM accounts WHERE phone=_phone) THEN
+		RAISE unique_violation USING HINT = 'Phone number ' || _phone || ' has been used';
+	END IF;
+	
+	RETURN QUERY
+	INSERT INTO accounts(username, password, email, phone)
+	VALUES (_username, _password, _email, _phone)
+	RETURNING *;
+END;
+$$ LANGUAGE plpgsql;
