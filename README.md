@@ -21,7 +21,19 @@ The APIs are deployed to https://its-freelancer.herokuapp.com/.
 
 - `GET /api/account`: get current user's information.
 
-- `PATCH /api/account`: update current user's information. Body is a dict that dictates which fields will be updated and what their new values will be, i.e. { "bio": "Hello there", "citizen_id": "a.k.a. cmnd" }.
+- `PATCH /api/account`: update current user's information. Body is a dict that dictates which fields will be updated and what their new values will be, i.e. { "bio": "Hello there", "citizen_id": "a.k.a. cmnd" }. List of fields that can be updated: `fullname, email, phone, bio, citizen_id`.
+
+## Job Types
+
+- `GET /api/job-type`: get all job types. Each of them will be in the form `{ id, name }`.
+
+- `GET /api/job-type/:id`: get job type with a given ID.
+
+- `POST /api/job-type`: create a new type. Only admins can access this route. Body must contain `name`, which is the name for the new type.
+
+- `DELETE /api/job-type/:id`: delete a job type with a given ID. Only admins can access this route.
+
+- `PATCH /api/job-type/:id`: update name of a type. Only admins can access this route. Body must contain `name`, which is the new name of the type.
 
 # License
 
