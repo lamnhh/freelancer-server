@@ -10,6 +10,7 @@ app.use(cors());
 
 // Routing starting here
 app.use("/api/account", require("./account/account.route"));
+app.use("/api/job-type", require("./job-type/job-type.route"));
 // Routing ending here
 
 app.use(function(err, req, res, next) {

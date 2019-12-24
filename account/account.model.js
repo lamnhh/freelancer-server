@@ -55,14 +55,16 @@ function login(username, password) {
  * Find a user from database with a given username.
  * @param {String} username
  */
-function findByUsername(username) {
+function findByUsername(username, keepIsAdmin = false) {
   return db.query("SELECT * FROM accounts WHERE username=$1", [username]).then(function({ rows }) {
     if (rows.length !== 1) {
       throw { http: 404, code: "NO_USER", message: "User does not exist" };
     }
     let user = normaliseString(rows[0]);
+    if (!keepIsAdmin) {
+      delete user.is_admin;
+    }
     delete user.password;
-    delete user.is_admin;
     return user;
   });
 }
