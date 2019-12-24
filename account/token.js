@@ -3,9 +3,7 @@ let { isString } = require("../configs/types");
 let { findByUsername } = require("./account.model");
 
 function generateToken(username) {
-  let token = jwt.sign({ username }, process.env.JWT_SECRET, {
-    expiresIn: "1y"
-  });
+  let token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: "1y" });
   return token;
 }
 
@@ -14,20 +12,21 @@ function generateToken(username) {
  * @param {*} req
  */
 function extractUsername(req) {
-  // Check if req.headers.authorization is in the form "Bearer <jwt>"
-  let auth = req.headers.authorization;
-  if (!auth) {
-    // req.headers.authorization not found
+  // Check if request contains token
+  // Token may be contained in headers (for all users) or
+  // in session cookie (for admins only)
+  if (!req.headers.authorization && req.session && !req.session.token) {
     throw { http: 401, code: "UNAUTHORISED", message: "Token required" };
   }
-  let authTokens = auth.split(" ");
+
+  // Check if req.headers.authorization is in the form "Bearer <jwt>"
+  let authTokens = (req.headers.authorization || req.session.token).split(" ");
   if (authTokens.length !== 2 || authTokens[0] !== "Bearer") {
     throw { http: 401, code: "UNAUTHORISED", message: "Invalid token" };
   }
 
   let token = authTokens[1];
   try {
-    // Verify token
     let payload = jwt.verify(token, process.env.JWT_SECRET);
     if (payload && isString(payload.username)) {
       return payload.username;
