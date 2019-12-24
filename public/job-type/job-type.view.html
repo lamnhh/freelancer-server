@@ -10,6 +10,7 @@
   <link href="/css/plugins/dataTables/datatables.min.css" rel="stylesheet" />
   <link href="/css/animate.css" rel="stylesheet" />
   <link href="/css/style.css" rel="stylesheet" />
+  <link href="/css/plugins/toastr/toastr.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -110,6 +111,7 @@
                       <tr>
                         <th>ID</th>
                         <th>Category Name</th>
+                        <th>Action</th>
                       </tr>
                     </thead>
                     <tbody id="tbl-content"></tbody>
@@ -117,6 +119,7 @@
                       <tr>
                         <th>ID</th>
                         <th>Category Name</th>
+                        <th>Action</th>
                       </tr>
                     </tfoot>
                   </table>
@@ -144,9 +147,36 @@
   <script src="/js/inspinia.js"></script>
   <script src="/js/plugins/pace/pace.min.js"></script>
 
+  <!-- Toastr -->
+  <script src="/js/plugins/toastr/toastr.min.js"></script>
+
   <!-- Page-Level Scripts -->
   <script>
+    function deleteType(rowIndex, typeId, name) {
+      if (!confirm("Are you sure you want to delete `" + name + "`?")) {
+        return;
+      }
+      fetch("/api/job-type/" + typeId, { method: "DELETE" }).then(function (res) {
+        if (res.ok) {
+          toastr.success("`" + name + "` has been deleted", "Success");
+          $(".dataTables-example").DataTable().row(rowIndex).remove().rows().invalidate("data").draw(false);
+          return;
+        }
+        res.json().then(function ({ message = "Internal Server Error" }) {
+          toastr.success(message, "Error");
+        })
+      });
+    }
+
     $(document).ready(function () {
+      toastr.options = {
+        closeButton: true,
+        progressBar: true,
+        showMethod: 'slideDown',
+        timeOut: 4000
+      };
+
+
       $(".dataTables-example").DataTable({
         pageLength: 10,
         responsive: true,
@@ -155,7 +185,19 @@
           url: "/api/job-type",
           dataSrc: ""
         },
-        columns: [{ data: "id" }, { data: "name" }],
+        columns: [{ data: "id" }, { data: "name" }, { data: null }],
+        columnDefs: [
+          {
+            targets: 2,
+            data: null,
+            render: function (_, _, row, meta) {
+              return `<div>
+                <button class="btn btn-primary">Edit</button>
+                <button class="btn btn-danger" onclick="deleteType(${meta.row}, ${row.id}, '${row.name}');">Delete</button>
+              </div>`;
+            }
+          }
+        ],
         buttons: [
           { extend: "copy" },
           { extend: "csv" },
