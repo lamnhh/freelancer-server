@@ -9,8 +9,12 @@ app.use(morgan("dev"));
 app.use(cors());
 
 // Routing starting here
-
+app.use("/api/account", require("./account/account.route"));
 // Routing ending here
+
+app.use(function(err, req, res, next) {
+  res.status(500).send(err);
+});
 
 let port = process.env.PORT || 3000;
 app.listen(port, function() {
