@@ -13,7 +13,11 @@ app.use("/api/account", require("./account/account.route"));
 // Routing ending here
 
 app.use(function(err, req, res, next) {
-  res.status(500).send(err);
+  if (err.http) {
+    res.status(err.http).send(err);
+  } else {
+    res.status(500).send(err);
+  }
 });
 
 let port = process.env.PORT || 3000;

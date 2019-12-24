@@ -51,7 +51,53 @@ function login(username, password) {
   });
 }
 
+/**
+ * Find a user from database with a given username.
+ * @param {String} username
+ */
+function findByUsername(username) {
+  return db.query("SELECT * FROM accounts WHERE username=$1", [username]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw { http: 404, code: "NO_USER", message: "User does not exist" };
+    }
+    let user = normaliseString(rows[0]);
+    delete user.password;
+    delete user.is_admin;
+    return user;
+  });
+}
+
+/**
+ * Update current user's information.
+ * @param {String} username
+ * @param {Object} patch A dictionary of (key, value), where key is the field to be updated, value
+ * is the new value of that field.
+ */
+function updateInformation(username, patch) {
+  let modifier = Object.keys(patch)
+    .map((key, idx) => `${key}=$${idx + 1}`)
+    .join(", ");
+  let lastIndex = Object.keys(patch).length + 1;
+
+  return db
+    .query(
+      `UPDATE accounts SET ${modifier} WHERE username=$${lastIndex} RETURNING *`,
+      Object.values(patch).concat(username)
+    )
+    .then(function({ rows }) {
+      if (rows.length !== 1) {
+        throw { http: 404, code: "NO_USER", message: "User does not exist" };
+      }
+      let user = normaliseString(rows[0]);
+      delete user.password;
+      delete user.is_admin;
+      return user;
+    });
+}
+
 module.exports = {
   createAccount,
-  login
+  login,
+  findByUsername,
+  updateInformation
 };
