@@ -71,6 +71,12 @@ In whatever case, a job will be in the following form:
 
 - `PATCH /api/job/:id`: update a job. Request body can contain a subset of `(name, description, cv_url, type_id, price_list: [{price, description}, {price, description}]`.
 
+## Wallets
+
+THIS IS JUST A DEMO. Consider this "wallet" thing a placeholder for an actual wallet service, where users have to activate their wallets, top up using their cards, etc.
+
+Here, users can top up their wallets at will. Users must enter their password before every transaction.
+
 # License
 
 MIT License
