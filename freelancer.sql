@@ -143,3 +143,65 @@ BEGIN
 	RETURNING *;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION transfer_money(transaction_id int) 
+RETURNS TABLE (new_balance int)
+AS $$
+DECLARE
+	username1 character(16);
+	username2 character(16);
+	wallet1 int;
+	wallet2 int;
+	amount int;
+BEGIN
+-- 	Fetch 2 usernames
+	username1 := NULL;
+	username2 := NULL;
+	SELECT 
+		transactions.username, jobs.username, price INTO username1, username2, amount
+	FROM
+		transactions
+		JOIN jobs ON (jobs.id = transactions.job_id)
+	WHERE
+		transactions.id=transaction_id;
+	
+-- 	If at least one of the two is NULL, then transaction ID is invalid
+	IF (username1 IS NULL) OR (username2 IS NULL) THEN
+		RAISE EXCEPTION 'Invalid transaction ID';
+	END IF;
+	
+-- 	Fetch wallet ID of the two users
+	wallet1 := NULL;
+	wallet2 := NULL;
+	
+	SELECT wallet_id INTO wallet1
+	FROM accounts
+	WHERE accounts.username = username1;
+	
+	SELECT wallet_id INTO wallet2
+	FROM accounts
+	WHERE accounts.username = username2;
+	
+-- 	If at least one of wallet1 and wallet2 is NULL
+	IF (wallet1 IS NULL) OR (wallet2 IS NULL) THEN
+		RAISE EXCEPTION 'One of the two has not activate their wallet';
+	END IF;
+	
+-- 	Check current balance of sender
+	IF NOT EXISTS (SELECT * FROM wallets WHERE id=wallet1 AND balance >= amount) THEN
+		RAISE EXCEPTION 'Buyer does not have enough money in their wallet';
+	END IF;
+	
+	UPDATE wallets
+	SET balance = balance + amount
+	WHERE id=wallet2;
+	
+	RETURN QUERY
+	UPDATE wallets
+	SET balance = balance - amount
+	WHERE id=wallet1
+	RETURNING balance;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM transfer_money(2);
