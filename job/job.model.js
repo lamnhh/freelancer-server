@@ -15,6 +15,7 @@ function findAllJobs(page = 0, size = 10, approved = true) {
     jobs.name as name,
     jobs.description as description,
     jobs.cv_url as cv_url,
+    jobs.status as status,
     job_types.name as type,
     accounts.username as username,
     accounts.fullname as fullname,
@@ -28,7 +29,7 @@ function findAllJobs(page = 0, size = 10, approved = true) {
     JOIN accounts ON (jobs.username = accounts.username)
     JOIN job_types ON (jobs.type_id = job_types.id)
     LEFT JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
-  ${approved ? "WHERE jobs.status = TRUE" : ""}
+  ${approved ? "WHERE jobs.status = TRUE" : "WHERE jobs.status IS NOT TRUE"}
   GROUP BY
     jobs.id, job_types.name, accounts.username
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}
@@ -53,6 +54,7 @@ function findById(jobId, approved = true) {
     jobs.name as name,
     jobs.description as description,
     jobs.cv_url as cv_url,
+    jobs.status as status,
     job_types.name as type,
     accounts.username as username,
     accounts.fullname as fullname,
