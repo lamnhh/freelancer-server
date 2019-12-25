@@ -185,9 +185,34 @@ async function updateJob(jobId, username, patch) {
   return await findById(jobId, false);
 }
 
+/**
+ * Approve/Reject a job
+ * @param {Number} jobId
+ * @param {Number} status
+ */
+function approve(jobId, status) {
+  return db.query("SELECT * FROM jobs WHERE id=$1", [jobId]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw { http: 404, code: "NO_JOB", message: `No job with ID '${jobId}' exists` };
+    }
+    if (rows[0].status) {
+      throw {
+        http: 400,
+        code: "NOT_ALLOWED",
+        message: `Job was approved, it cannot be changed anymore`
+      };
+    }
+
+    return db.query(`UPDATE jobs SET status=${status === 1 ? "TRUE" : "FALSE"} WHERE id=$1 `, [
+      jobId
+    ]);
+  });
+}
+
 module.exports = {
   findAllJobs,
   findById,
   createJob,
-  updateJob
+  updateJob,
+  approve
 };

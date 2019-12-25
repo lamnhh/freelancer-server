@@ -28,6 +28,9 @@ app.use("/api/account", require("./account/account.route"));
 app.use("/api/job-type", require("./job-type/job-type.route"));
 app.use("/api/job", require("./job/job.route"));
 
+// Routing for admins' APIs
+app.use("/api/job-admin", require("./job/job.admin.route"));
+
 // Routing for admins' frontend
 app.use("/", require("./admin.route"));
 

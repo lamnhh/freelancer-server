@@ -9,7 +9,9 @@ let { isURL } = require("validator");
  * Returns all approved jobs
  */
 router.get("/", function(req, res, next) {
-  Job.findAllJobs()
+  let page = (req.query.page || 1) - 1;
+  let size = req.query.size || 10;
+  Job.findAllJobs(page, size)
     .then(function(jobList) {
       res.send(jobList);
     })
@@ -77,6 +79,11 @@ router.post("/", tokenValidator, function(req, res, next) {
     .catch(next);
 });
 
+/**
+ * PATCH /api/job/:id
+ * Update a job.
+ * Body can contain a subset of (name, description, type_id, cv_url, price_list).
+ */
 router.patch("/:id", tokenValidator, function(req, res, next) {
   let jobId = parseInt(req.params.id);
   if (isNaN(jobId)) {
