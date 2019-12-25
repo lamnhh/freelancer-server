@@ -6,10 +6,8 @@ let { adminValidator } = require("../account/token");
  * GET /api/job-admin
  * Returns all jobs
  */
-router.get("/", function(req, res, next) {
-  let page = (req.query.page || 1) - 1;
-  let size = req.query.size || 10;
-  Job.findAllJobs(page, size, false)
+router.get("/", adminValidator, function(req, res, next) {
+  Job.findAllJobs(0, -1, false)
     .then(function(jobList) {
       res.send(jobList);
     })
