@@ -27,7 +27,6 @@ router.get("/logout", function(req, res, next) {
 function sendFile(filename) {
   // Consider that /job-type is the homepage for admins.
   return function(req, res) {
-    console.log("TOKEN =========================", req.session.token);
     if (req.session.token) {
       // Logged in
       if (filename === "login.html") {
@@ -49,5 +48,6 @@ function sendFile(filename) {
 router.get("/", sendFile("login.html"));
 router.get("/job-type", sendFile("job-type/job-type.view.html"));
 router.get("/job-type/new", sendFile("job-type/job-type.new.html"));
+router.get("/job-application", sendFile("job-application/job-application.html"));
 
 module.exports = router;
