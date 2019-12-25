@@ -31,9 +31,45 @@ The APIs are deployed to https://its-freelancer.herokuapp.com/.
 
 - `POST /api/job-type`: create a new type. Only admins can access this route. Body must contain `name`, which is the name for the new type.
 
-- `DELETE /api/job-type/:id`: delete a job type with a given ID. Only admins can access this route.
+- (Deprecated) `DELETE /api/job-type/:id`: delete a job type with a given ID. Only admins can access this route.
 
 - `PATCH /api/job-type/:id`: update name of a type. Only admins can access this route. Body must contain `name`, which is the new name of the type.
+
+## Jobs
+
+For all GET requests, result will contain a single job, or a list of jobs.
+
+In whatever case, a job will be in the following form:
+
+```
+{
+  "id": 2,
+  "name": "React.js Developer",
+  "description": "Develope front-end for webapps using React.js 123",
+  "cv_url": "https://www.youtube.com/",  // URL to the CV
+  "type": "Back-end Developer",
+  "username": "system",
+  "fullname": "Lam Nguyen",
+  "price_list": [
+    {
+      "price": 1000,
+      "description": "Junior"
+    },
+    {
+      "price": 50000,
+      "description": "Senior 123"
+    }
+  ]
+}
+```
+
+- `GET /api/job?page=<page>&size=<size>`: get all APPROVED jobs. This API supports pagination (page starts from 1, defaults to 1; size defaults to 10).
+
+- `GET /api/job/:id`: get job with a given ID. If said job isn't approved, the API resolves in a 404.
+
+- `POST /api/job`: create a new job. Request body must contain `(name, description, cv_url, type_id, price_list: [{price, description}, {price, description}]`.
+
+- `PATCH /api/job/:id`: update a job. Request body can contain a subset of `(name, description, cv_url, type_id, price_list: [{price, description}, {price, description}]`.
 
 # License
 
