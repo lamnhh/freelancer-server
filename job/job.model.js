@@ -27,7 +27,7 @@ function findAllJobs(page = 0, size = 10, approved = true) {
   FROM jobs
     JOIN accounts ON (jobs.username = accounts.username)
     JOIN job_types ON (jobs.type_id = job_types.id)
-    JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
+    LEFT JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
   ${approved ? "WHERE jobs.status = TRUE" : ""}
   GROUP BY
     jobs.id, job_types.name, accounts.username
@@ -65,7 +65,7 @@ function findById(jobId, approved = true) {
   FROM jobs
     JOIN accounts ON (jobs.username = accounts.username)
     JOIN job_types ON (jobs.type_id = job_types.id)
-    JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
+    LEFT JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
   WHERE
     jobs.id = $1 ${approved ? "AND jobs.status = TRUE" : ""}
   GROUP BY
@@ -122,8 +122,72 @@ async function createJob(name, description, type_id, username, cv_url, price_tie
   return await findById(jobId, false);
 }
 
+/**
+ * Update a job's information.
+ * @param {Number} jobId ID of the job to be updated
+ * @param {String} username Username of the user attempting to update this job
+ * @param {Object} patch An object that contains all field be updated
+ */
+async function updateJob(jobId, username, patch) {
+  // Check if jobId is valid
+  await db.query("SELECT * FROM jobs WHERE id=$1", [jobId]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw { http: 404, code: "NO_JOB", message: `No job with ID '${jobId}' exists` };
+    }
+
+    // Can only update when job isn't check by admins, or it was rejected.
+    if (rows[0].status) {
+      throw {
+        http: 401,
+        code: "NOT_ALLOWED",
+        message: "This job is approved, it cannot be updated anymore"
+      };
+    }
+  });
+
+  let fields = ["name", "description", "type_id", "cv_url"];
+  let jobModifier = fields.filter((key) => typeof patch[key] !== "undefined");
+
+  // Update the job's entry in `jobs`
+  let sql = `
+  UPDATE jobs
+  SET ${jobModifier
+    .map((key, idx) => `${key}=$${idx + 1}`)
+    .concat("status=NULL")
+    .join(", ")}
+  WHERE id=$${jobModifier.length + 1} AND username=$${jobModifier.length + 2}
+  `;
+  await db.query(sql, jobModifier.map((key) => patch[key]).concat([jobId, username]));
+
+  let { price_list: price_tier_list } = patch;
+  if (typeof price_tier_list !== "undefined") {
+    // Clear old price tiers
+    await db.query("DELETE FROM job_price_tiers WHERE job_id=$1", [jobId]);
+
+    // Use jobId to create entries for price tiers.
+    sql =
+      "INSERT INTO job_price_tiers VALUES " +
+      price_tier_list
+        .map(function(_, idx) {
+          let x = idx * 3 + 1;
+          let y = idx * 3 + 2;
+          let z = idx * 3 + 3;
+          return `($${x}, $${y}, $${z})`;
+        })
+        .join(", ");
+    let params = price_tier_list.reduce(function(acc, { price, description }) {
+      return acc.concat([jobId, price, description]);
+    }, []);
+
+    await db.query(sql, params);
+  }
+
+  return await findById(jobId, false);
+}
+
 module.exports = {
   findAllJobs,
   findById,
-  createJob
+  createJob,
+  updateJob
 };
