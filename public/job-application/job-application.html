@@ -165,8 +165,8 @@
             </div>
             <div class="modal-footer">
               <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-              <button class="btn btn-danger btn-sm" type="submit">Reject</button>
-              <button class="btn btn-primary btn-sm" type="submit">Approve</button>
+              <button class="btn btn-danger btn-sm" type="button" onclick="approveJob(0);">Reject</button>
+              <button class="btn btn-primary btn-sm" type="button" onclick="approveJob(1);">Approve</button>
             </div>
           </form>
         </div>
@@ -195,7 +195,31 @@
 
   <!-- Page-Level Scripts -->
   <script>
-    function viewJob(job) {
+    let currentJobId = -1;
+    let currentRowIndex = -1;
+
+    function approveJob(status) {
+      if (!confirm(`Are you sure you want to ${status ? "approve" : "reject"} this application?`)) {
+        return;
+      }
+      fetch(`/api/job-admin/${currentJobId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ status }),
+        headers: { "Content-Type": "application/json" }
+      }).then(function (res) {
+        if (res.ok) {
+          location.reload();
+        } else {
+          res.json().then(function ({ message = "Internal Server Error" }) {
+            toastr.error(message, "Error");
+          })
+        }
+      })
+    }
+
+    function viewJob(job, rowIndex) {
+      currentJobId = job.id;
+      currentRowIndex = rowIndex;
       $(".job-name").html(job.name);
       $(".job-type").html(job.type);
       $(".job-cv").attr("href", job.cv_url).html(job.cv_url);
@@ -245,7 +269,7 @@
             targets: 4,
             data: null,
             render: function (_, _, row, meta) {
-              return `<button class="btn btn-primary" onclick='viewJob(${JSON.stringify(row)})'>View more</button>`;
+              return `<button class="btn btn-primary" onclick='viewJob(${JSON.stringify(row)}, ${meta.row})'>View more</button>`;
             }
           }
         ],
