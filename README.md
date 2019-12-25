@@ -31,7 +31,7 @@ The APIs are deployed to https://its-freelancer.herokuapp.com/.
 
 - `POST /api/job-type`: create a new type. Only admins can access this route. Body must contain `name`, which is the name for the new type.
 
-- `DELETE /api/job-type/:id`: delete a job type with a given ID. Only admins can access this route.
+- (Deprecated) `DELETE /api/job-type/:id`: delete a job type with a given ID. Only admins can access this route.
 
 - `PATCH /api/job-type/:id`: update name of a type. Only admins can access this route. Body must contain `name`, which is the new name of the type.
 
