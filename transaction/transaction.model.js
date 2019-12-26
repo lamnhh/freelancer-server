@@ -20,7 +20,8 @@ function findAllTransactions(username) {
       'username', accounts.username,
       'fullname', accounts.fullname
     ) as seller,
-    transactions.review as review
+    transactions.review as review,
+    transactions.status as is_finished
   FROM
     transactions
     JOIN jobs ON (transactions.job_id=jobs.id)
@@ -60,7 +61,8 @@ function findById(username, transactionId) {
       'username', accounts.username,
       'fullname', accounts.fullname
     ) as seller,
-    transactions.review as review
+    transactions.review as review,
+    transactions.status as is_finished
   FROM
     transactions
     JOIN jobs ON (transactions.job_id=jobs.id)
@@ -182,9 +184,53 @@ async function addReview(username, transactionId, review) {
   return await db.query("UPDATE transactions SET review=$1 WHERE id=$2", [review, transactionId]);
 }
 
+/**
+ * Mark a transaction as "finished" after buyer has received their product(s).
+ * In database, this "finished" is described using field `status`: true/false <=> finished/unfinished.
+ * Note that by a transaction's existence in the database means it has been paid beforehand.
+ * @param {String} username
+ * @param {Number} transactionId
+ */
+async function markAsFinished(username, transactionId) {
+  // Query corresponding transaction
+  let transaction = await db
+    .query("SELECT * FROM transactions WHERE id=$1", [transactionId])
+    .then(function({ rows }) {
+      if (rows.length !== 1) {
+        throw {
+          http: 404,
+          code: "NO_TRANSACTION",
+          message: `No transaction with ID '${transactionId}' exists`
+        };
+      }
+      return normaliseString(rows[0]);
+    });
+
+  // Only the transaction's buyer can mark it as finished
+  if (transaction.username !== username) {
+    throw {
+      http: 401,
+      code: "UNAUTHORISED",
+      message: "Unauthorised"
+    };
+  }
+
+  // Transaction is already finished, cannot mark again
+  if (transaction.status === true) {
+    throw {
+      http: 405,
+      code: "NOT_ALLOWED",
+      message: "Cannot mark twice"
+    };
+  }
+
+  return db.query("UPDATE transactions SET status=TRUE WHERE id=$1", [transactionId]);
+}
+
 module.exports = {
   findAllTransactions,
   findById,
   createTransaction,
-  addReview
+  addReview,
+  markAsFinished
 };

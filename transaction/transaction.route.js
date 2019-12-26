@@ -88,4 +88,22 @@ router.post("/:id/review", tokenValidator, function(req, res, next) {
     .catch(next);
 });
 
+/**
+ * POST /api/transaction/:id/finish
+ * Mark a transaction as finished.
+ */
+router.post("/:id/finish", tokenValidator, function(req, res, next) {
+  let transactionId = parseInt(req.params.id);
+  if (isNaN(transactionId) || transactionId <= 0) {
+    next({ http: 400, code: "INVALID_ID", message: "Invalid transaction ID" });
+    return;
+  }
+
+  Transaction.markAsFinished(req.body.username, transactionId)
+    .then(function() {
+      res.send({ message: "Transaction is finished" });
+    })
+    .catch(next);
+});
+
 module.exports = router;
