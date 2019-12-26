@@ -137,6 +137,15 @@ async function updateJob(jobId, username, patch) {
       throw { http: 404, code: "NO_JOB", message: `No job with ID '${jobId}' exists` };
     }
 
+    // Only uploader can update a job
+    if (rows[0].username !== username) {
+      throw {
+        http: 401,
+        code: "NOT_ALLOWED",
+        message: `Only uploaders can make change to their jobs`
+      };
+    }
+
     // Can only update when job isn't check by admins, or it was rejected.
     if (rows[0].status) {
       throw {
@@ -157,7 +166,7 @@ async function updateJob(jobId, username, patch) {
     .map((key, idx) => `${key}=$${idx + 1}`)
     .concat("status=NULL")
     .join(", ")}
-  WHERE id=$${jobModifier.length + 1} AND username=$${jobModifier.length + 2}
+  WHERE id=$${jobModifier.length + 1}
   `;
   await db.query(sql, jobModifier.map((key) => patch[key]).concat([jobId, username]));
 
