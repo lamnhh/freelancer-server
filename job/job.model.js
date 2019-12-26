@@ -8,8 +8,15 @@ let { normaliseString } = require("../configs/types");
  * @param {Number} page index of requested
  * @param {Number} size size of each page. Pass size=-1 to fetch all jobs
  * @param {Boolean} approved true/false whether to only return approved jobs or not
+ * @param {Object} filters a dictionary of filters to apply
  */
-function findAllJobs(page = 0, size = 10, approved = true) {
+function findAllJobs(
+  page = 0,
+  size = 10,
+  approved = true,
+  filters = { lower: 0, upper: 1000000000 }
+) {
+  let { lower, upper, username } = filters;
   let sql = `
   SELECT
     jobs.id as id,
@@ -30,12 +37,17 @@ function findAllJobs(page = 0, size = 10, approved = true) {
     JOIN accounts ON (jobs.username = accounts.username)
     JOIN job_types ON (jobs.type_id = job_types.id)
     LEFT JOIN job_price_tiers ON (jobs.id = job_price_tiers.job_id)
-  ${approved ? "WHERE jobs.status = TRUE" : "WHERE jobs.status IS NOT TRUE"}
+  WHERE
+    (jobs.status ${approved ? "=" : "IS NOT"} TRUE) AND 
+    ($1 <= job_price_tiers.price) AND (job_price_tiers.price <= $2)
+    ${username ? "AND (jobs.username = $3)" : ""}
   GROUP BY
     jobs.id, job_types.name, accounts.username
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}
   `;
-  return db.query(sql).then(function({ rows }) {
+
+  console.log({ lower, upper, username });
+  return db.query(sql, [lower, upper].concat(username ? [username] : [])).then(function({ rows }) {
     return rows.map(normaliseString).map(function(row) {
       row.price_list = row.price_list.map(normaliseString);
       return row;
