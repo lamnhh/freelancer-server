@@ -99,7 +99,17 @@ router.post("/:id/finish", tokenValidator, function(req, res, next) {
     return;
   }
 
-  Transaction.markAsFinished(req.body.username, transactionId)
+  let { username, password } = req.body;
+  if (!isString(password)) {
+    next({ http: 400, code: "INVALID_PASSWORD", message: "Invalid password" });
+    return;
+  }
+  if (password.length < 6) {
+    next({ http: 400, code: "WRONG_PASSWORD", message: "Wrong password" });
+    return;
+  }
+
+  Transaction.markAsFinished(username, password, transactionId)
     .then(function() {
       res.send({ message: "Transaction is finished" });
     })

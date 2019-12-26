@@ -1,4 +1,5 @@
 let db = require("../configs/db");
+let Account = require("../account/account.model");
 let { normaliseString } = require("../configs/types");
 
 /**
@@ -188,10 +189,15 @@ async function addReview(username, transactionId, review) {
  * Mark a transaction as "finished" after buyer has received their product(s).
  * In database, this "finished" is described using field `status`: true/false <=> finished/unfinished.
  * Note that by a transaction's existence in the database means it has been paid beforehand.
+ * User HAS to re-login to perform this action.
  * @param {String} username
+ * @param {String} password
  * @param {Number} transactionId
  */
-async function markAsFinished(username, transactionId) {
+async function markAsFinished(username, password, transactionId) {
+  // Check if password is correct
+  await Account.login(username, password);
+
   // Query corresponding transaction
   let transaction = await db
     .query("SELECT * FROM transactions WHERE id=$1", [transactionId])
