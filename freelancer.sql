@@ -144,32 +144,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION transfer_money(transaction_id int) 
+CREATE OR REPLACE FUNCTION transfer_money(username1 character(16), username2 character(16), amount int)
 RETURNS TABLE (new_balance int)
 AS $$
 DECLARE
-	username1 character(16);
-	username2 character(16);
 	wallet1 int;
 	wallet2 int;
-	amount int;
 BEGIN
--- 	Fetch 2 usernames
-	username1 := NULL;
-	username2 := NULL;
-	SELECT 
-		transactions.username, jobs.username, price INTO username1, username2, amount
-	FROM
-		transactions
-		JOIN jobs ON (jobs.id = transactions.job_id)
-	WHERE
-		transactions.id=transaction_id;
-	
--- 	If at least one of the two is NULL, then transaction ID is invalid
-	IF (username1 IS NULL) OR (username2 IS NULL) THEN
-		RAISE EXCEPTION 'Invalid transaction ID';
-	END IF;
-	
 -- 	Fetch wallet ID of the two users
 	wallet1 := NULL;
 	wallet2 := NULL;
@@ -203,5 +184,3 @@ BEGIN
 	RETURNING balance;
 END;
 $$ LANGUAGE plpgsql;
-
-SELECT * FROM transfer_money(2);

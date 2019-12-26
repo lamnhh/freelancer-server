@@ -103,30 +103,40 @@ function findById(username, transactionId) {
  */
 async function createTransaction(username, jobId, price) {
   // Check if jobId is a valid job ID.
-  await db.query("SELECT * FROM jobs WHERE id=$1", [jobId]).then(function({ rows }) {
+  let job = await db.query("SELECT * FROM jobs WHERE id=$1", [jobId]).then(function({ rows }) {
     if (rows.length !== 1) {
       throw { http: 404, code: "NO_JOB", message: `No job with ID '${jobId}' exists` };
     }
 
-    let job = normaliseString(rows[0]);
-    if (job.username === username) {
-      // A user cannot buy their own job.
-      throw { http: 400, code: "NOT_ALLOWED", message: "You cannot buy your own job" };
-    }
+    return normaliseString(rows[0]);
   });
 
+  // A user cannot buy their own job.
+  if (job.username === username) {
+    throw { http: 400, code: "NOT_ALLOWED", message: "You cannot buy your own job" };
+  }
+
+  // Payment must be made before transaction is created.
+  await db.query("SELECT * FROM transfer_money($1, $2, $3)", [username, job.username, price]);
+
   return await db
-    .query(`INSERT INTO transactions(username, job_id, price) VALUES ($1, $2, $3) RETURNING *`, [
-      username,
-      jobId,
-      price
-    ])
+    .query(
+      `INSERT INTO transactions(username, job_id, price, status) VALUES ($1, $2, $3, FALSE) RETURNING *`,
+      [username, jobId, price]
+    )
     .then(function({ rows }) {
       // Return newly created transaction
       return rows[0];
     });
 }
 
+/**
+ * Add review.
+ * Only buyer can review the transaction.
+ * @param {String} username Buyer
+ * @param {Number} transactionId
+ * @param {String} review
+ */
 async function addReview(username, transactionId, review) {
   // Query corresponding transaction
   let transaction = await db
@@ -160,7 +170,14 @@ async function addReview(username, transactionId, review) {
     };
   }
 
-  // TODO: Check transaction status before committing review.
+  // Cannot review unless transaction is finished (status = true)
+  if (transaction.status !== true) {
+    throw {
+      http: 405,
+      code: "NOT_ALLOWED",
+      message: "Transaction has yet to be finished, cannot review"
+    };
+  }
 
   return await db.query("UPDATE transactions SET review=$1 WHERE id=$2", [review, transactionId]);
 }
