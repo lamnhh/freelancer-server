@@ -46,6 +46,11 @@ app.use(function(err, req, res, next) {
 });
 
 let port = process.env.PORT || 3000;
-app.listen(port, function() {
+
+// Initialize Socket.IO
+let server = require("http").createServer(app);
+require("./chat")(server);
+
+server.listen(port, function() {
   console.log("Server is running on port " + port);
 });

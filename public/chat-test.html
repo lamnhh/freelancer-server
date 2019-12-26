@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Chat Test</title>
+</head>
+
+<body>
+  <form onsubmit="event.preventDefault(); connect(this);">
+    <input type="text" name="token" required placeholder="Enter token">
+    <input type="text" name="receiver" required placeholder="Receiver">
+    <button type="submit">Connect</button>
+  </form>
+
+  <form onsubmit="event.preventDefault(); send(this);">
+    <input type="text" name="chat" required placeholder="Chat here">
+    <button type="submit">Send</button>
+  </form>
+
+  <div class="chat-history"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+  <script>
+    let socket;
+    let receiver;
+
+    function connect(form) {
+      socket = io.connect("http://localhost:3000/", {
+        query: {
+          token: form.token.value
+        }
+      });
+      receiver = form.receiver.value;
+
+      socket.emit("chat-with", form.receiver.value);
+      socket.on("message", function (receiver, messageList) {
+        let container = document.getElementsByClassName("chat-history")[0];
+        messageList.map(function (message) {
+          container.innerHTML += `<p>${message.content}</p>`;
+        })
+      });
+    }
+
+    function send(form) {
+      let chat = form.chat.value;
+      socket.emit("send", receiver, chat);
+    }
+  </script>
+</body>
+
+</html>
