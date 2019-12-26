@@ -2,6 +2,97 @@ let db = require("../configs/db");
 let { normaliseString } = require("../configs/types");
 
 /**
+ * Find all transactions that user `username` made.
+ * @param {String} username
+ */
+function findAllTransactions(username) {
+  let sql = `
+  SELECT
+    transactions.id as id,
+    transactions.username as buyer,
+    job_price_tiers.price as price,
+    job_price_tiers.description as price_description,
+    created_at,
+    transactions.job_id as job_id,
+    jobs.name as job_name,
+    jobs.description as job_description,
+    json_build_object(
+      'username', accounts.username,
+      'fullname', accounts.fullname
+    ) as seller
+  FROM
+    transactions
+    JOIN jobs ON (transactions.job_id=jobs.id)
+    JOIN job_price_tiers ON (transactions.price = job_price_tiers.price)
+    JOIN accounts ON (jobs.username = accounts.username)
+  WHERE
+    transactions.username=$1
+  ORDER BY
+    created_at DESC
+  `;
+  return db.query(sql, [username]).then(function({ rows }) {
+    return rows.map(normaliseString).map(function(row) {
+      row.seller = normaliseString(row.seller);
+      return row;
+    });
+  });
+}
+
+/**
+ * Return a single transaction from user `username`.
+ * If `transactionId` does not belong to `username`, this will throw a 401.
+ * @param {String} username
+ * @param {Number} transactionId
+ */
+function findById(username, transactionId) {
+  let sql = `
+  SELECT
+    transactions.id as id,
+    transactions.username as buyer,
+    job_price_tiers.price as price,
+    job_price_tiers.description as price_description,
+    created_at,
+    transactions.job_id as job_id,
+    jobs.name as job_name,
+    jobs.description as job_description,
+    json_build_object(
+      'username', accounts.username,
+      'fullname', accounts.fullname
+    ) as seller
+  FROM
+    transactions
+    JOIN jobs ON (transactions.job_id=jobs.id)
+    JOIN job_price_tiers ON (transactions.price = job_price_tiers.price)
+    JOIN accounts ON (jobs.username = accounts.username)
+  WHERE
+    transactions.id=$1
+  `;
+  return db.query(sql, [transactionId]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw {
+        http: 404,
+        code: "NO_TRANSACTION",
+        message: `No transaction with ID '${transactionId}' exists`
+      };
+    }
+
+    let transaction = normaliseString(rows[0]);
+    transaction.seller = normaliseString(transaction.seller);
+
+    // If this transaction does not belong to `username`, throw a 401
+    if (transaction.buyer !== username) {
+      throw {
+        http: 401,
+        code: "UNAUTHORISED",
+        message: "Unauthorised"
+      };
+    }
+
+    return transaction;
+  });
+}
+
+/**
  * Create a new transaction.
  * Remember, a seller's service is determined by (jobId, price).
  * @param {String} username Username of buyer (user that buys the job)
@@ -35,5 +126,7 @@ async function createTransaction(username, jobId, price) {
 }
 
 module.exports = {
+  findAllTransactions,
+  findById,
   createTransaction
 };
