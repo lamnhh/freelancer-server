@@ -1,4 +1,5 @@
 let db = require("../configs/db");
+let Account = require("../account/account.model");
 let { normaliseString } = require("../configs/types");
 
 /**
@@ -95,6 +96,12 @@ function findById(jobId, approved = true) {
  * @param {Array} price_tier_list Array of price tiers, each should be in the form { price: int, description: text }.
  */
 async function createJob(name, description, type_id, username, cv_url, price_tier_list) {
+  // Verify if uploader has activated their wallet yet
+  let uploader = await Account.findByUsername(username);
+  if (uploader.wallet_id === null) {
+    throw { http: 405, code: "WALLET_INACTIVE", message: "Please activate your wallet first" };
+  }
+
   // First, create an entry in the table `jobs`, fetch its ID into jobId.
   let sql = `
   INSERT INTO jobs(name, description, type_id, username, cv_url) 
