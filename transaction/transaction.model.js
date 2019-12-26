@@ -120,7 +120,12 @@ async function createTransaction(username, jobId, price) {
   }
 
   // Payment must be made before transaction is created.
-  await db.query("SELECT * FROM transfer_money($1, $2, $3)", [username, job.username, price]);
+  await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
+    username,
+    job.username,
+    price,
+    job.name
+  ]);
 
   return await db
     .query(
@@ -129,7 +134,7 @@ async function createTransaction(username, jobId, price) {
     )
     .then(function({ rows }) {
       // Return newly created transaction
-      return rows[0];
+      return normaliseString(rows[0]);
     });
 }
 

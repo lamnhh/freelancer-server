@@ -1,4 +1,5 @@
 let db = require("../configs/db");
+let { normaliseString } = require("../configs/types");
 
 /**
  * Activate a wallet for user with given username.
@@ -36,25 +37,33 @@ function topup(walletId, amount) {
   if (walletId === null) {
     throw { http: 404, code: "NO_WALLET", message: "Wallet has not been activated" };
   }
-  return db
-    .query(
-      `UPDATE wallets
-      SET balance = balance + $1 
-      WHERE id = $2
-      RETURNING balance`,
-      [amount, walletId]
-    )
-    .then(function({ rows }) {
-      if (rows.length !== 1) {
-        throw { http: 404, code: "NO_WALLET", message: "Wallet does not exists" };
-      }
-      // Return new balance
-      return rows[0].balance;
-    });
+  return db.query(`SELECT * FROM topup($1, $2)`, [walletId, amount]).then(function({ rows }) {
+    // Return new balance
+    return rows[0].new_balance;
+  });
+}
+
+/**
+ * List all past transactions of this wallet, including top-ups and transfers.
+ * @param {Number} walletId
+ */
+function findHistory(walletId) {
+  if (walletId === null) {
+    throw { http: 404, code: "NO_WALLET", message: "Wallet has not been activated" };
+  }
+
+  let sql = `
+  SELECT * FROM wallet_transactions 
+  WHERE wallet_from=$1 OR wallet_to=$2
+  ORDER BY created_at DESC`;
+  return db.query(sql, [walletId, walletId]).then(function({ rows }) {
+    return rows.map(normaliseString);
+  });
 }
 
 module.exports = {
   activateWallet,
   queryBalance,
-  topup
+  topup,
+  findHistory
 };
