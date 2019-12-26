@@ -10,7 +10,9 @@ function findHistory(sender, receiver) {
   let sql = `
   SELECT *
   FROM messages
-  WHERE (username_from = $1 AND username_to = $2) OR (username_from = $2 AND username_to = $1)`;
+  WHERE (username_from = $1 AND username_to = $2) OR (username_from = $2 AND username_to = $1)
+  ORDER BY created_at DESC
+  `;
   return db.query(sql, [sender, receiver]).then(function({ rows }) {
     return rows.map(normaliseString);
   });

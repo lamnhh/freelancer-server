@@ -12,6 +12,7 @@ APIs for Freelancer app, with a frontend for admins.
   - [Wallets](#wallets)
   - [Transactions](#transactions)
   - [Notifications](#notifications)
+  - [Chat](#chat)
 - [License](#license)
 
 # Team members
@@ -138,6 +139,26 @@ All GET requests will return a single transaction, or a list of transactions, ea
 ## Notifications
 
 - `GET /api/notification`: get all notifications of the current user.
+
+## Chat
+
+Real-time chat is done using [Socket.IO](https://socket.io/). Client for Java can be found [here](https://github.com/socketio/socket.io-client-java).
+
+You can interact with the server using:
+
+- `connection`: obviously. Remember to send along user token. For example: `io.connect("localhost:3000?token=<user token>)`.
+
+- `chat-with(receiver)`: request for current user to chat with `receiver`. The server will an event `message` that contains chat history between the two users.
+
+- `send(receiver, content)`: send a message `content` to `receiver`.
+
+- `leave(receiver)`: stop chatting with `receiver`.
+
+You need to implement this listener:
+
+- `message(receiver, messageList)`: user `receiver` sent you `messageList`, which is a list of message in the form `{ id, username_from, username_to, content, created_at }`. You can use `receiver` to determine where to display the messages.
+
+A client example (with Javascript, on web) can be found in `/public/chat-test.html`.
 
 # License
 

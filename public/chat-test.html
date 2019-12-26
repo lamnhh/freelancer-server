@@ -26,11 +26,7 @@
     let receiver;
 
     function connect(form) {
-      socket = io.connect("http://localhost:3000/", {
-        query: {
-          token: form.token.value
-        }
-      });
+      socket = io.connect("http://localhost:3000/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImxhbW5oaCIsImlhdCI6MTU3NzM3OTk1NiwiZXhwIjoxNjA4OTM3NTU2fQ.oq4Ho6sh6nB3RqOE4HjrmzmBZjQCHbVXpFfSM77JuTk");
       receiver = form.receiver.value;
 
       socket.emit("chat-with", form.receiver.value);
