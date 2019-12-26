@@ -107,6 +107,16 @@ All GET requests will return a single transaction, or a list of transactions, ea
 }
 ```
 
+- `GET /api/transaction`: get all transactions the current user has made.
+
+- `GET /api/transaction/:id`: get a single transaction.
+
+- `POST /api/transaction`: create a new transaction. Request body: `{ jobId, price }`.
+
+- `POST /api/transaction/:id/finish`: mark a transaction as finished.
+
+- `POST /api/transaction/:id/review`: add review to a transaction. Request body: `{ review }`.
+
 # License
 
 MIT License
