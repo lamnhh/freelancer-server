@@ -55,6 +55,22 @@ router.get("/", tokenValidator, function(req, res, next) {
 });
 
 /**
+ * GET /api/account/:username
+ * Query a user's public information (username, fullname, profile image?).
+ */
+router.get("/:username", function(req, res, next) {
+  let username = req.params.username;
+  Account.findByUsername(username)
+    .then(function(user) {
+      res.send({
+        username,
+        fullname: user.fullname
+      });
+    })
+    .catch(next);
+});
+
+/**
  * PATCH /api/account
  * Update current user's information. Body should be a JSON object, containing
  * fields and respective values to be updated.

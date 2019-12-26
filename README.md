@@ -21,6 +21,8 @@ The APIs are deployed to https://its-freelancer.herokuapp.com/.
 
 - `GET /api/account`: get current user's information.
 
+- `GET /api/account/:username`: get public information of user `username`, including `username, fullname`.
+
 - `PATCH /api/account`: update current user's information. Body is a dict that dictates which fields will be updated and what their new values will be, i.e. { "bio": "Hello there", "citizen_id": "a.k.a. cmnd" }. List of fields that can be updated: `fullname, email, phone, bio, citizen_id`.
 
 ## Job Types
