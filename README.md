@@ -83,6 +83,40 @@ Here, users can top up their wallets at will. Users MUST enter their password be
 
 - `POST /api/wallet/topup`: top up current user's wallet. Request body must contain a field `amount`. This number must be a positive integer.
 
+## Transactions
+
+Do not confuse this with WalletTransaction. This is meant to describe transactions between users and jobs: a user buys a job.
+
+All GET requests will return a single transaction, or a list of transactions, each of which is in the following form:
+
+```
+{
+  "id": 11,
+  "buyer": "lamnhh",
+  "price": 1000,
+  "price_description": "Junior",
+  "created_at": "2019-12-26T01:07:15.877Z",
+  "job_id": 2,
+  "job_name": "React.js Developer",
+  "job_description": "Develope front-end for webapps using React.js 123",
+  "seller": {
+    "username": "system",
+    "fullname": "Lam Nguyen"
+  },
+  "review": "Great service"
+}
+```
+
+- `GET /api/transaction`: get all transactions the current user has made.
+
+- `GET /api/transaction/:id`: get a single transaction.
+
+- `POST /api/transaction`: create a new transaction. Request body: `{ jobId, price }`.
+
+- `POST /api/transaction/:id/finish`: mark a transaction as finished.
+
+- `POST /api/transaction/:id/review`: add review to a transaction. Request body: `{ review }`.
+
 # License
 
 MIT License

@@ -63,6 +63,9 @@ router.post("/", tokenValidator, function(req, res, next) {
     if (cv_url > 200) {
       throw "URL is too long";
     }
+    if (price_list.length === 0) {
+      throw "Price list must not be empty";
+    }
     price_list.forEach(function({ price, description }) {
       if (typeof price !== "number" || !isString(description)) {
         throw "Please check the price tiers: price and description must both be present";
@@ -112,6 +115,9 @@ router.patch("/:id", tokenValidator, function(req, res, next) {
       throw "URL is too long";
     }
     if (typeof price_list !== "undefined") {
+      if (price_list.length === 0) {
+        throw "Price list must not be empty";
+      }
       price_list.forEach(function({ price, description }) {
         if (typeof price !== "number" || !isString(description)) {
           throw "Please check the price tiers: price and description must both be present";
