@@ -144,7 +144,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION transfer_money(username1 character(16), username2 character(16), amount int)
+CREATE OR REPLACE FUNCTION transfer_money(username1 character(16), username2 character(16), amount int, content text)
 RETURNS TABLE (new_balance int)
 AS $$
 DECLARE
@@ -173,6 +173,9 @@ BEGIN
 		RAISE EXCEPTION 'Buyer does not have enough money in their wallet';
 	END IF;
 	
+	INSERT INTO wallet_transactions(amount, wallet_from, wallet_to, content)
+	VALUES (amount, wallet1, wallet2, content);
+	
 	UPDATE wallets
 	SET balance = balance + amount
 	WHERE id=wallet2;
@@ -181,6 +184,25 @@ BEGIN
 	UPDATE wallets
 	SET balance = balance - amount
 	WHERE id=wallet1
+	RETURNING balance;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION topup(wallet_id int, amount int)
+RETURNS TABLE (new_balance int)
+AS $$
+BEGIN
+	IF amount <= 0 THEN
+		RAISE EXCEPTION 'Amount must be a positive integer';
+	END IF;
+	
+	INSERT INTO wallet_transactions(amount, wallet_from, wallet_to)
+	VALUES (amount, wallet_id, wallet_id);
+
+	RETURN QUERY
+	UPDATE wallets
+	SET balance = balance + amount
+	WHERE id=wallet_id
 	RETURNING balance;
 END;
 $$ LANGUAGE plpgsql;

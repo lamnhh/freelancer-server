@@ -66,4 +66,19 @@ router.post("/topup", tokenValidator, function(req, res, next) {
     .catch(next);
 });
 
+/**
+ * GET /api/wallet/history
+ * Return all past transactions of current user.
+ */
+router.get("/history", tokenValidator, function(req, res, next) {
+  verifyUser(req)
+    .then(function(user) {
+      return Wallet.findHistory(user.wallet_id);
+    })
+    .then(function(history) {
+      res.send(history);
+    })
+    .catch(next);
+});
+
 module.exports = router;

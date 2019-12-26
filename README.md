@@ -2,6 +2,18 @@
 
 APIs for Freelancer app, with a frontend for admins.
 
+# Table of Contents
+
+- [Team members](#team-members)
+- [Documentation](#documentation)
+  - [Accounts](#accounts)
+  - [Job Types](#job-types)
+  - [Jobs](#jobs)
+  - [Wallets](#wallets)
+  - [Transactions](#transactions)
+  - [Notifications](#notifications)
+- [License](#license)
+
 # Team members
 
 - 1712329: Lê Tuấn Đạt.
@@ -65,7 +77,9 @@ In whatever case, a job will be in the following form:
 }
 ```
 
-- `GET /api/job?page=<page>&size=<size>`: get all APPROVED jobs. This API supports pagination (page starts from 1, defaults to 1; size defaults to 10).
+- `GET /api/job?page=<page>&size=<size>&lower=<lower>&upper=<upper>&username=<username>`: get all APPROVED jobs. This API supports pagination (page starts from 1, defaults to 1; size defaults to 10). This API also supports filtering by price range: from `lower` to `upper`, by uploader `username`. For example, this API will fetch all jobs uploaded by `seller`, with price between 1 and 1000: `GET /api/job?lower=1&upper=1000&username=seller`.
+
+- `GET /api/job?search=<keyword>`: search for all jobs whose name or description contains `keyword`. This API also supports pagination and filters by the one above.
 
 - `GET /api/job/:id`: get job with a given ID. If said job isn't approved, the API resolves in a 404.
 
@@ -80,6 +94,8 @@ THIS IS JUST A DEMO. Consider this "wallet" thing a placeholder for an actual wa
 Here, users can top up their wallets at will. Users MUST enter their password before every transaction, which means the request body MUST contain a field `password`.
 
 - `GET /api/wallet`: get balance of current user.
+
+- `GET /api/wallet/history`: get all past transactions made by current user.
 
 - `POST /api/wallet/activate`: activate current user's wallet.
 
@@ -118,6 +134,10 @@ All GET requests will return a single transaction, or a list of transactions, ea
 - `POST /api/transaction/:id/finish`: mark a transaction as finished.
 
 - `POST /api/transaction/:id/review`: add review to a transaction. Request body: `{ review }`.
+
+## Notifications
+
+- `GET /api/notification`: get all notifications of the current user.
 
 # License
 
