@@ -19,7 +19,8 @@ function findAllTransactions(username) {
     json_build_object(
       'username', accounts.username,
       'fullname', accounts.fullname
-    ) as seller
+    ) as seller,
+    transactions.review as review
   FROM
     transactions
     JOIN jobs ON (transactions.job_id=jobs.id)
@@ -58,7 +59,8 @@ function findById(username, transactionId) {
     json_build_object(
       'username', accounts.username,
       'fullname', accounts.fullname
-    ) as seller
+    ) as seller,
+    transactions.review as review
   FROM
     transactions
     JOIN jobs ON (transactions.job_id=jobs.id)
@@ -125,8 +127,47 @@ async function createTransaction(username, jobId, price) {
     });
 }
 
+async function addReview(username, transactionId, review) {
+  // Query corresponding transaction
+  let transaction = await db
+    .query("SELECT * FROM transactions WHERE id=$1", [transactionId])
+    .then(function({ rows }) {
+      if (rows.length !== 1) {
+        throw {
+          http: 404,
+          code: "NO_TRANSACTION",
+          message: `No transaction with ID '${transactionId}' exists`
+        };
+      }
+      return normaliseString(rows[0]);
+    });
+
+  // Only transaction's buyer can add review
+  if (transaction.username !== username) {
+    throw {
+      http: 401,
+      code: "UNAUTHORISED",
+      message: "Unauthorised"
+    };
+  }
+
+  // Cannot review twice
+  if (transaction.review !== null) {
+    throw {
+      http: 405,
+      code: "NOT_ALLOWED",
+      message: "Cannot review twice"
+    };
+  }
+
+  // TODO: Check transaction status before committing review.
+
+  return await db.query("UPDATE transactions SET review=$1 WHERE id=$2", [review, transactionId]);
+}
+
 module.exports = {
   findAllTransactions,
   findById,
-  createTransaction
+  createTransaction,
+  addReview
 };

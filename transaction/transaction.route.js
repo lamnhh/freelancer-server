@@ -1,6 +1,7 @@
 let router = require("express").Router();
 let Transaction = require("./transaction.model");
 let { tokenValidator } = require("../account/token");
+let { isString } = require("../configs/types");
 
 /**
  * GET /api/transaction
@@ -59,6 +60,30 @@ router.post("/", tokenValidator, function(req, res, next) {
   Transaction.createTransaction(username, jobId, price)
     .then(function(transaction) {
       res.status(201).send(transaction);
+    })
+    .catch(next);
+});
+
+/**
+ * POST /api/transaction/:id/review
+ * Add review. Request body must contain a single field `review` (string).
+ */
+router.post("/:id/review", tokenValidator, function(req, res, next) {
+  let transactionId = parseInt(req.params.id);
+  if (isNaN(transactionId) || transactionId <= 0) {
+    next({ http: 400, code: "INVALID_ID", message: "Invalid transaction ID" });
+    return;
+  }
+
+  let { username, review } = req.body;
+  if (!isString(review)) {
+    next({ http: 400, code: "INVALID_REVIEW", message: "Review must be a string" });
+    return;
+  }
+
+  Transaction.addReview(username, transactionId, review)
+    .then(function() {
+      res.send({ message: "Review added" });
     })
     .catch(next);
 });
