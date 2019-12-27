@@ -266,7 +266,7 @@ async function markAsFinished(username, password, transactionId) {
   await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
     "system",
     transaction.seller,
-    transaction.price,
+    Math.floor(transaction.price * 0.8),
     `Payment for job '${transaction.job_name}' from ${transaction.username}`
   ]);
 
