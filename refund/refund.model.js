@@ -86,8 +86,30 @@ async function approveRequest(transactionId, status) {
   return await db.query(sql, [status, transactionId]);
 }
 
+/**
+ * Find all pending (new) refund requests.
+ */
 function findAllRequests() {
-  let sql = `SELECT * FROM refund_requests WHERE status IS NULL`;
+  let sql = `
+  SELECT
+    transaction_id,
+    transactions.username as buyer,
+    jobs.username as seller,
+    jobs.name as job_name,
+    job_types.name as job_type,
+    jobs.description as job_description,
+    refund_requests.created_at as created_at,
+    reason,
+    job_price_tiers.price as price,
+    job_price_tiers.description as price_description
+  FROM
+    refund_requests
+    JOIN transactions ON (refund_requests.transaction_id = transactions.id)
+    JOIN jobs ON (transactions.job_id = jobs.id)
+    JOIN job_types ON (jobs.type_id = job_types.id)
+    JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
+  WHERE
+    refund_requests.status IS NULL`;
   return db.query(sql).then(function({ rows }) {
     return rows;
   });
