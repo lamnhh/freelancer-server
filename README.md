@@ -110,21 +110,29 @@ All GET requests will return a single transaction, or a list of transactions, ea
 
 ```
 {
-  "id": 11,
+  "id": 14,
   "buyer": "lamnhh",
   "price": 1000,
   "price_description": "Junior",
-  "created_at": "2019-12-26T01:07:15.877Z",
+  "created_at": "2019-12-26T01:58:26.492Z",
   "job_id": 2,
   "job_name": "React.js Developer",
-  "job_description": "Develope front-end for webapps using React.js 123",
+  "job_description": "Develop front-end for webapps using React.js 123",
   "seller": {
     "username": "system",
     "fullname": "Lam Nguyen"
   },
-  "review": "Great service"
+  "review": "Great",
+  "is_finished": true,
+  "refund": {
+    "created_at": "2019-12-27T11:26:59.094884",
+    "reason": "test",
+    "status": null
+  }
 }
 ```
+
+`refund` describes refund request of this transaction: `refund = null` means there is no refund requests at the moment, otherwise, `refund` is an object as in the example above, where `refund.status` describes whether this request was approved/rejected by the admins.
 
 - `GET /api/transaction`: get all transactions the current user has made.
 
