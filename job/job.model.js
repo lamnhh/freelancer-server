@@ -10,8 +10,8 @@ let { normaliseString } = require("../configs/types");
  * @param {Boolean} approved true/false whether to only return approved jobs or not
  * @param {Object} filters a dictionary of filters to apply
  */
-function findAllJobs(page = 0, size = 10, approved = true, filters) {
-  let { lower, upper, username, search } = filters;
+function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
+  let { lower = 0, upper = 1000000000, username, search = "" } = filters;
   let sql = `
   SELECT
     jobs.id as id,
@@ -41,6 +41,8 @@ function findAllJobs(page = 0, size = 10, approved = true, filters) {
     jobs.id, job_types.name, accounts.username
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}
   `;
+
+  console.log(sql);
 
   let params = [lower, upper, `%${search}%`];
   if (username) {
