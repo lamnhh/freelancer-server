@@ -49,5 +49,6 @@ router.get("/", sendFile("login.html"));
 router.get("/job-type", sendFile("job-type/job-type.view.html"));
 router.get("/job-type/new", sendFile("job-type/job-type.new.html"));
 router.get("/job-application", sendFile("job-application/job-application.html"));
+router.get("/refund", sendFile("refund/refund.html"));
 
 module.exports = router;

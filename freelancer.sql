@@ -51,6 +51,7 @@ CREATE TABLE transactions (
 	job_id		int,
 	price		int,
 	created_at	timestamp default NOW(),
+	finished_at timestamp,
 	status		boolean,
 	review		text,
 	primary key (id)
@@ -59,6 +60,7 @@ CREATE TABLE transactions (
 CREATE TABLE refund_requests (
 	transaction_id	int,
 	reason			text,
+	created_at timestamp default NOW(),
 	status			boolean,
 	primary key (transaction_id)
 );

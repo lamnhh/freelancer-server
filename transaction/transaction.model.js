@@ -13,7 +13,7 @@ function findAllTransactions(username) {
     transactions.username as buyer,
     job_price_tiers.price as price,
     job_price_tiers.description as price_description,
-    created_at,
+    transactions.created_at as created_at,
     transactions.job_id as job_id,
     jobs.name as job_name,
     jobs.description as job_description,
@@ -22,17 +22,25 @@ function findAllTransactions(username) {
       'fullname', accounts.fullname
     ) as seller,
     transactions.review as review,
-    transactions.status as is_finished
+    transactions.status as is_finished,
+    CASE
+      WHEN refund_requests.transaction_id IS NOT NULL THEN json_build_object(
+        'created_at', refund_requests.created_at,
+        'reason', refund_requests.reason,
+        'status', refund_requests.status
+      )
+      ELSE NULL
+    END as refund
   FROM
     transactions
-    JOIN jobs ON (transactions.job_id=jobs.id)
-    JOIN job_price_tiers ON (transactions.price = job_price_tiers.price)
+    JOIN jobs ON (transactions.job_id = jobs.id)
+    JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
     JOIN accounts ON (jobs.username = accounts.username)
+    LEFT JOIN refund_requests ON (refund_requests.transaction_id = transactions.id)
   WHERE
     transactions.username=$1
   ORDER BY
-    created_at DESC
-  `;
+    created_at DESC`;
   return db.query(sql, [username]).then(function({ rows }) {
     return rows.map(normaliseString).map(function(row) {
       row.seller = normaliseString(row.seller);
@@ -54,7 +62,7 @@ function findById(username, transactionId) {
     transactions.username as buyer,
     job_price_tiers.price as price,
     job_price_tiers.description as price_description,
-    created_at,
+    transactions.created_at as created_at,
     transactions.job_id as job_id,
     jobs.name as job_name,
     jobs.description as job_description,
@@ -63,15 +71,23 @@ function findById(username, transactionId) {
       'fullname', accounts.fullname
     ) as seller,
     transactions.review as review,
-    transactions.status as is_finished
+    transactions.status as is_finished,
+    CASE
+      WHEN refund_requests.transaction_id IS NOT NULL THEN json_build_object(
+        'created_at', refund_requests.created_at,
+        'reason', refund_requests.reason,
+        'status', refund_requests.status
+      )
+      ELSE NULL
+    END as refund
   FROM
     transactions
-    JOIN jobs ON (transactions.job_id=jobs.id)
-    JOIN job_price_tiers ON (transactions.price = job_price_tiers.price)
+    JOIN jobs ON (transactions.job_id = jobs.id)
+    JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
     JOIN accounts ON (jobs.username = accounts.username)
+    LEFT JOIN refund_requests ON (refund_requests.transaction_id = transactions.id)
   WHERE
-    transactions.id=$1
-  `;
+    transactions.id=$1`;
   return db.query(sql, [transactionId]).then(function({ rows }) {
     if (rows.length !== 1) {
       throw {
@@ -235,7 +251,9 @@ async function markAsFinished(username, password, transactionId) {
     };
   }
 
-  return db.query("UPDATE transactions SET status=TRUE WHERE id=$1", [transactionId]);
+  return db.query("UPDATE transactions SET status = TRUE, finished_at = NOW() WHERE id=$1", [
+    transactionId
+  ]);
 }
 
 module.exports = {

@@ -30,6 +30,7 @@ app.use("/api/job", require("./job/job.route"));
 app.use("/api/wallet", require("./wallet/wallet.route"));
 app.use("/api/transaction", require("./transaction/transaction.route"));
 app.use("/api/notification", require("./notification/noti.route"));
+app.use("/api/refund", require("./refund/refund.route"));
 
 // Routing for admins' APIs
 app.use("/api/job-admin", require("./job/job.admin.route"));
