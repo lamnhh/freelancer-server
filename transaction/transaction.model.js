@@ -138,9 +138,9 @@ async function createTransaction(username, jobId, price) {
   // Payment must be made before transaction is created.
   await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
     username,
-    job.username,
+    "system",
     price,
-    job.name
+    `Payment for job '${job.name}'`
   ]);
 
   return await db
@@ -220,18 +220,29 @@ async function markAsFinished(username, password, transactionId) {
   await Account.login(username, password);
 
   // Query corresponding transaction
-  let transaction = await db
-    .query("SELECT * FROM transactions WHERE id=$1", [transactionId])
-    .then(function({ rows }) {
-      if (rows.length !== 1) {
-        throw {
-          http: 404,
-          code: "NO_TRANSACTION",
-          message: `No transaction with ID '${transactionId}' exists`
-        };
-      }
-      return normaliseString(rows[0]);
-    });
+  let sql = `
+  SELECT
+    transactions.id as id,
+    transactions.username as username,
+    jobs.name as job_name,
+    transactions.status as status,
+    transactions.price as price,
+    jobs.username as seller
+  FROM 
+    transactions
+    JOIN jobs ON (transactions.job_id = jobs.id)
+  WHERE 
+    transactions.id=$1`;
+  let transaction = await db.query(sql, [transactionId]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw {
+        http: 404,
+        code: "NO_TRANSACTION",
+        message: `No transaction with ID '${transactionId}' exists`
+      };
+    }
+    return normaliseString(rows[0]);
+  });
 
   // Only the transaction's buyer can mark it as finished
   if (transaction.username !== username) {
@@ -251,7 +262,15 @@ async function markAsFinished(username, password, transactionId) {
     };
   }
 
-  return db.query("UPDATE transactions SET status = TRUE, finished_at = NOW() WHERE id=$1", [
+  // Forward payment to seller
+  await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
+    "system",
+    transaction.seller,
+    transaction.price,
+    `Payment for job '${transaction.job_name}' from ${transaction.username}`
+  ]);
+
+  return await db.query("UPDATE transactions SET status = TRUE, finished_at = NOW() WHERE id=$1", [
     transactionId
   ]);
 }

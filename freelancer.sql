@@ -123,6 +123,8 @@ CREATE OR REPLACE FUNCTION create_account(
 )
 RETURNS SETOF accounts AS
 $$
+DECLARE
+	wallet_id int;
 BEGIN
 	-- 	Check if username has been used yet
 	IF EXISTS (SELECT * FROM accounts WHERE username=_username) THEN
@@ -138,10 +140,12 @@ BEGIN
 	IF EXISTS (SELECT * FROM accounts WHERE phone=_phone) THEN
 		RAISE unique_violation USING HINT = 'Phone number ' || _phone || ' has been used';
 	END IF;
+
+	INSERT INTO wallets(balance) VALUES (0) RETURNING id into wallet_id;
 	
 	RETURN QUERY
-	INSERT INTO accounts(username, password, email, phone)
-	VALUES (_username, _password, _email, _phone)
+	INSERT INTO accounts(username, password, email, phone, wallet_id)
+	VALUES (_username, _password, _email, _phone, wallet_id)
 	RETURNING *;
 END;
 $$ LANGUAGE plpgsql;
