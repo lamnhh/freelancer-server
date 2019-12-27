@@ -49,12 +49,52 @@ async function createRefundRequest(username, transactionId, reason) {
     };
   }
 
-  let sql = `INSERT INTO refund_requests(transaction_id, reason) VALUES ($1, $2)`;
+  let sql = `INSERT INTO refund_requests(transaction_id, reason) VALUES ($1, $2) RETURNING *`;
   return await db.query(sql, [transactionId, reason]).then(function({ rows }) {
     return rows[0];
   });
 }
 
+/**
+ * Approve/Reject a refund request. Used by admins only.
+ * @param {Number} transactionId
+ * @param {Boolean} status
+ */
+async function approveRequest(transactionId, status) {
+  let request = await db
+    .query("SELECT * FROM refund_requests WHERE transaction_id=$1", [transactionId])
+    .then(function({ rows }) {
+      if (rows.length !== 1) {
+        throw {
+          http: 404,
+          code: "NO_REQUEST",
+          message: "No such request exists"
+        };
+      }
+      return rows[0];
+    });
+
+  if (request.status !== null) {
+    throw {
+      http: 405,
+      code: "NOT_ALLOWED",
+      message: "Cannot approve/reject twice"
+    };
+  }
+
+  let sql = `UPDATE refund_requests SET status=$1 WHERE transaction_id=$2`;
+  return await db.query(sql, [status, transactionId]);
+}
+
+function findAllRequests() {
+  let sql = `SELECT * FROM refund_requests WHERE status IS NULL`;
+  return db.query(sql).then(function({ rows }) {
+    return rows;
+  });
+}
+
 module.exports = {
-  createRefundRequest
+  createRefundRequest,
+  approveRequest,
+  findAllRequests
 };
