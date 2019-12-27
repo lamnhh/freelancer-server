@@ -51,7 +51,7 @@ router.post("/activate", tokenValidator, function(req, res, next) {
  */
 router.post("/topup", tokenValidator, function(req, res, next) {
   let amount = parseInt(req.body.amount);
-  if (isNaN(amount) || amount <= 0) {
+  if (isNaN(amount)) {
     next({ http: 400, code: "INVALID_AMOUNT", message: "Invalid amount" });
     return;
   }

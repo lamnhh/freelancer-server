@@ -192,8 +192,8 @@ CREATE OR REPLACE FUNCTION topup(wallet_id int, amount int)
 RETURNS TABLE (new_balance int)
 AS $$
 BEGIN
-	IF amount <= 0 THEN
-		RAISE EXCEPTION 'Amount must be a positive integer';
+	IF NOT EXISTS (SELECT * FROM wallets WHERE balance + amount >= 0 AND id = wallet_id) THEN
+		RAISE EXCEPTION 'Cannot withdraw more than your current balance';
 	END IF;
 	
 	INSERT INTO wallet_transactions(amount, wallet_from, wallet_to)
