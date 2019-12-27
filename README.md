@@ -144,6 +144,12 @@ All GET requests will return a single transaction, or a list of transactions, ea
 
 - `POST /api/transaction/:id/review`: add review to a transaction. Request body: `{ review }`.
 
+## Refund Requests
+
+- `POST /api/refund/:id`: create a refund request for transaction `id`. Request body must contain a string `reason`.
+
+- `POST /api/refund/:id/approve`: approve/reject the refund request on transaction `id`. Used by admins only. Request body must contain a boolean `status`.
+
 ## Notifications
 
 - `GET /api/notification`: get all notifications of the current user.
