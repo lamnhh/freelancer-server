@@ -12,7 +12,7 @@ router.post("/login", function(req, res, next) {
         throw { http: 401, code: "UNAUTHORISED", message: "Unauthorised" };
       }
       req.session.token = "Bearer " + generateToken(username);
-      res.redirect("/job-type");
+      res.redirect("/dashboard");
     })
     .catch(next);
 });
@@ -25,12 +25,12 @@ router.get("/logout", function(req, res, next) {
 });
 
 function sendFile(filename) {
-  // Consider that /job-type is the homepage for admins.
+  // Consider that /dashboard is the homepage for admins.
   return function(req, res) {
     if (req.session.token) {
       // Logged in
       if (filename === "login.html") {
-        res.redirect("/job-type");
+        res.redirect("/dashboard");
       } else {
         res.sendFile(path.join(__dirname, "public", filename));
       }
@@ -50,5 +50,6 @@ router.get("/job-type", sendFile("job-type/job-type.view.html"));
 router.get("/job-type/new", sendFile("job-type/job-type.new.html"));
 router.get("/job-application", sendFile("job-application/job-application.html"));
 router.get("/refund", sendFile("refund/refund.html"));
+router.get("/dashboard", sendFile("dashboard.html"));
 
 module.exports = router;
