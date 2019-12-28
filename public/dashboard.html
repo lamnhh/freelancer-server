@@ -11,6 +11,7 @@
   <link href="/css/animate.css" rel="stylesheet" />
   <link href="/css/style.css" rel="stylesheet" />
   <link href="/css/plugins/toastr/toastr.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" ref="stylesheet">
 </head>
 
 <body>
@@ -91,37 +92,18 @@
           <div class="col-lg-5">
             <div class="ibox-title">
               <h5>New data for the report</h5> <span class="label label-primary">GIG</span>
-              <div class="ibox-tools">
-                <a class="collapse-link" href="">
-                  <i class="fa fa-chevron-up"></i>
-                </a>
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                  <i class="fa fa-wrench"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-user">
-                  <li><a href="#" class="dropdown-item">Config option 1</a>
-                  </li>
-                  <li><a href="#" class="dropdown-item">Config option 2</a>
-                  </li>
-                </ul>
-                <a class="close-link" href="">
-                  <i class="fa fa-times"></i>
-                </a>
-              </div>
             </div>
             <div class="ibox-content">
               <div class="row">
                 <div class="col-lg-6 text-center">
                   <span>Today income</span>
-                  <h2 class="font-bold">$4,232</h2>
-                  <img style="max-width: 100%;"
-                    src="https://apexcharts.com/wp-content/uploads/2018/05/simple-pie-chart.svg">
+                  <h2 class="font-bold today-income-sum">$4,232</h2>
+                  <canvas id="today-income" width="100%"></canvas>
                 </div>
                 <div class="col-lg-6 text-center">
                   <span>This month income</span>
-                  <h2 class="font-bold">$40,232</h2>
-                  <img style="max-width: 100%;"
-                    src="https://apexcharts.com/wp-content/uploads/2018/05/simple-pie-chart.svg">
+                  <h2 class="font-bold month-income-sum">$40,232</h2>
+                  <canvas id="month-income" width="100%"></canvas>
                 </div>
               </div>
             </div>
@@ -130,30 +112,11 @@
           <div class="col-lg-7">
             <div class="ibox-title">
               <h5>Sales graph for the last 30 days</h5>
-              <div class="ibox-tools">
-                <a class="collapse-link" href="">
-                  <i class="fa fa-chevron-up"></i>
-                </a>
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                  <i class="fa fa-wrench"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-user">
-                  <li><a href="#" class="dropdown-item">Config option 1</a>
-                  </li>
-                  <li><a href="#" class="dropdown-item">Config option 2</a>
-                  </li>
-                </ul>
-                <a class="close-link" href="">
-                  <i class="fa fa-times"></i>
-                </a>
-              </div>
             </div>
             <div class="ibox-content">
               <div class="row">
                 <div class="col-lg-12 text-left" style="border-bottom: 1px solid #e7eaec;">
-                  <h2></h2>
-                  <img style="max-width: 100%"
-                    src="https://upload.wikimedia.org/wikipedia/en/7/71/Simple_line_graph_of_ACE_2012_results_by_candidate_sj01.png">
+                  <canvas id="last-12-months" style="max-width: 100%;">
                 </div>
               </div>
             </div>
@@ -162,30 +125,11 @@
           <div class="col-lg-12" style="margin-top: 20px;">
             <div class="ibox-title">
               <h5>Sales graph for the last 12 months</h5>
-              <div class="ibox-tools">
-                <a class="collapse-link" href="">
-                  <i class="fa fa-chevron-up"></i>
-                </a>
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                  <i class="fa fa-wrench"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-user">
-                  <li><a href="#" class="dropdown-item">Config option 1</a>
-                  </li>
-                  <li><a href="#" class="dropdown-item">Config option 2</a>
-                  </li>
-                </ul>
-                <a class="close-link" href="">
-                  <i class="fa fa-times"></i>
-                </a>
-              </div>
             </div>
             <div class="ibox-content">
               <div class="row">
                 <div class="col-lg-12 text-center" style="border-bottom: 1px solid #e7eaec;">
-                  <h2></h2>
-                  <img style="max-width: 100%"
-                    src="https://upload.wikimedia.org/wikipedia/en/7/71/Simple_line_graph_of_ACE_2012_results_by_candidate_sj01.png">
+                  <canvas id="last-30-days" style="max-width: 100%;"></canvas>
                 </div>
               </div>
             </div>
@@ -214,9 +158,105 @@
   <!-- Toastr -->
   <script src="/js/plugins/toastr/toastr.min.js"></script>
   <script src="https://momentjs.com/downloads/moment.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
 
   <!-- Page-Level Scripts -->
   <script>
+    $(document).ready(function () {
+      let colorArray = [
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(153, 102, 255, 0.7)',
+        'rgba(255, 159, 64, 0.7)'
+      ];
+      colorArray = colorArray.concat(colorArray);
+      colorArray = colorArray.concat(colorArray);
+      colorArray = colorArray.concat(colorArray);
+      fetch("/api/sales?count=1&type=day").then((res) => res.json()).then(function ([{ sum, shares }]) {
+        $(".today-income-sum").html(numeral(sum).format("$0,00.00"));
+        let data = {
+          datasets: [{
+            data: shares.map(({ sum }) => sum),
+            backgroundColor: colorArray
+          }],
+          labels: shares.map(({ name }) => name)
+        };
+
+        let ctx = document.getElementById("today-income");
+        let chart = new Chart(ctx, {
+          type: "pie",
+          data,
+          options: {
+            maintainAspectRatio: true,
+            aspectRatio: 1
+          }
+        });
+      });
+      fetch("/api/sales?count=1&type=month").then((res) => res.json()).then(function ([{ sum, shares }]) {
+        $(".month-income-sum").html(numeral(sum).format("$0,00.00"));
+        let data = {
+          datasets: [{
+            data: shares.map(({ sum }) => sum),
+            backgroundColor: colorArray
+          }],
+          labels: shares.map(({ name }) => name)
+        };
+
+        let ctx = document.getElementById("month-income");
+        let chart = new Chart(ctx, {
+          type: "pie",
+          data,
+          options: {
+            maintainAspectRatio: true,
+            aspectRatio: 1
+          }
+        });
+      });
+
+      fetch("/api/sales?count=30&type=day").then(res => res.json()).then(function (sales) {
+        let ctx = document.getElementById("last-30-days");
+        let chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            datasets: [{
+              data: sales.map(({ date, sum }) => sum),
+              backgroundColor: colorArray,
+              barThickness: 25,
+              label: "Sales over the last 30 days"
+            }],
+            labels: sales.map(({ date, sum }) => moment(date).format("YYYY-MM-DD"))
+          },
+          options: {
+            maintainAspectRatio: true,
+            aspectRatio: 3
+          }
+        });
+      });
+
+
+      fetch("/api/sales?count=12&type=month").then(res => res.json()).then(function (sales) {
+        let ctx = document.getElementById("last-12-months");
+        let chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            datasets: [{
+              data: sales.map(({ date, sum }) => sum),
+              backgroundColor: colorArray,
+              barThickness: 25,
+              label: "Sales over the last 12 months"
+            }],
+            labels: sales.map(({ date, sum }) => moment(date).format("YYYY-MM"))
+          },
+          options: {
+            maintainAspectRatio: true,
+            aspectRatio: 2.5
+          }
+        });
+      });
+    });
   </script>
 </body>
 
