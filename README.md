@@ -101,7 +101,7 @@ Here, users can top up their wallets at will.
 
 - (Deprecated) `POST /api/wallet/activate`: activate current user's wallet.
 
-- `POST /api/wallet/topup`: top up current user's wallet. Request body must contain `password` and `amount`. A positive `amount` represents "topping-up", while a negative one represents "withdrawing".
+- `POST /api/wallet`: top up current user's wallet. Request body must contain `password` and `amount`. A positive `amount` represents "topping-up", while a negative one represents "withdrawing".
 
 ## Transactions
 
