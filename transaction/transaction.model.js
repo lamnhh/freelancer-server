@@ -136,12 +136,24 @@ async function createTransaction(username, jobId, price) {
   }
 
   // Payment must be made before transaction is created.
-  await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
-    username,
-    "system",
-    price,
-    `Payment for job '${job.name}'`
-  ]);
+  await db
+    .query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
+      username,
+      "system",
+      price,
+      `Payment for job '${job.name}'`
+    ])
+    .catch(function(err) {
+      if (err.hint) {
+        throw {
+          http: 400,
+          code: "BALANCE_NOT_ENOUGH",
+          message:
+            "Your balance is not enough to pay for this transaction, please top up your wallet"
+        };
+      }
+      throw err;
+    });
 
   return await db
     .query(

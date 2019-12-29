@@ -2,68 +2,89 @@ let db = require("../configs/db");
 let { normaliseString } = require("../configs/types");
 
 /**
- * Activate a wallet for user with given username.
- * Here, assume that user has NOT activate their wallet.
+ * Find walletId of user `username`.
  * @param {String} username
  */
-async function activateWallet(username) {
-  let walletId = await db
-    .query(`INSERT INTO wallets(balance) VALUES (0) RETURNING id`)
-    .then(({ rows }) => rows[0].id);
-  await db.query(`UPDATE accounts SET wallet_id=$1 WHERE username=$2`, [walletId, username]);
-  return walletId;
-}
-
-/**
- * Query current user's balance.
- * @param {Number} walletId
- */
-function queryBalance(walletId) {
-  if (walletId === null) {
-    throw { http: 404, code: "NO_WALLET", message: "Wallet has not been activated" };
-  }
-  return db
-    .query("SELECT balance FROM wallets WHERE id=$1", [walletId])
-    .then(({ rows }) => rows[0].balance);
-}
-
-/**
- * Top up current user's wallet.
- * Amount must be greater than 0.
- * @param {Number} walletId
- * @param {Number} amount
- */
-function topup(walletId, amount) {
-  if (walletId === null) {
-    throw { http: 404, code: "NO_WALLET", message: "Wallet has not been activated" };
-  }
-  return db.query(`SELECT * FROM topup($1, $2)`, [walletId, amount]).then(function({ rows }) {
-    // Return new balance
-    return rows[0].new_balance;
+function findByUsername(username) {
+  let sql = `
+  SELECT
+    *
+  FROM
+    accounts
+    JOIN wallets ON (accounts.wallet_id = wallets.id)
+  WHERE
+    username=$1`;
+  return db.query(sql, [username]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      // username does not exist, or their wallet has not been activate
+      // (which should not happen)
+      throw { http: 404, code: "NO_USER", message: `Username '${username}' does not exist` };
+    }
+    // Otherwise, rows[0] describes user `username` along with their wallet ID and balance.
+    return rows[0];
   });
 }
 
 /**
- * List all past transactions of this wallet, including top-ups and transfers.
- * @param {Number} walletId
+ * Query current user's balance.
+ * @param {String} username Username of current user
  */
-function findHistory(walletId) {
-  if (walletId === null) {
-    throw { http: 404, code: "NO_WALLET", message: "Wallet has not been activated" };
-  }
+async function queryBalance(username) {
+  let wallet = await findByUsername(username);
+  return wallet.balance;
+}
 
+/**
+ * Update balance of user `username`: perform balance += amount.
+ *    amount > 0: top up `amount`.
+ *    amount < 0: withdraw `amount`.
+ * @param {String} username Username of current user
+ * @param {Number} amount Amount to top-up/withdraw
+ */
+function updateBalance(username, amount) {
+  return db
+    .query(`SELECT * FROM update_balance($1, $2)`, [username, amount])
+    .then(function({ rows }) {
+      // Return new balance
+      return rows[0].new_balance;
+    })
+    .catch((err) => {
+      if (err.hint) {
+        // If transaction raises an exception with hint, it means that the user
+        // has requested to withdraw more money than their current balance.
+        // In this case, using err.hint to send back to the user.
+        throw { http: 400, code: "INVALID_AMOUNT", message: err.hint };
+      }
+      throw err;
+    });
+}
+
+/**
+ * List all past transactions of current user, including top-ups and transfers.
+ * @param {String} username Username of current user
+ */
+function findHistory(username) {
   let sql = `
-  SELECT * FROM wallet_transactions 
-  WHERE wallet_from=$1 OR wallet_to=$2
-  ORDER BY created_at DESC`;
-  return db.query(sql, [walletId, walletId]).then(function({ rows }) {
+  SELECT
+    wallet_transactions.id,
+    wallet_transactions.amount,
+    wallet_transactions.created_at,
+    wallet_transactions.content
+  FROM
+    wallet_transactions
+    JOIN accounts ON (
+      wallet_transactions.wallet_from = accounts.wallet_id OR 
+      wallet_transactions.wallet_to = accounts.wallet_id
+    )
+  WHERE
+    accounts.username=$1`;
+  return db.query(sql, [username]).then(function({ rows }) {
     return rows.map(normaliseString);
   });
 }
 
 module.exports = {
-  activateWallet,
   queryBalance,
-  topup,
+  updateBalance,
   findHistory
 };
