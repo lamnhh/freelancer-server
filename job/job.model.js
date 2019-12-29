@@ -42,8 +42,6 @@ function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}
   `;
 
-  console.log(sql);
-
   let params = [lower, upper, `%${search}%`];
   if (username) {
     params.push(username);
