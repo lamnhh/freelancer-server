@@ -93,15 +93,15 @@ In whatever case, a job will be in the following form:
 
 THIS IS JUST A DEMO. Consider this "wallet" thing a placeholder for an actual wallet service, where users have to activate their wallets, top up using their cards, etc.
 
-Here, users can top up their wallets at will. Users MUST enter their password before every transaction, which means the request body MUST contain a field `password`.
+Here, users can top up their wallets at will.
 
 - `GET /api/wallet`: get balance of current user.
 
 - `GET /api/wallet/history`: get all past transactions made by current user.
 
-- `POST /api/wallet/activate`: activate current user's wallet.
+- (Deprecated) `POST /api/wallet/activate`: activate current user's wallet.
 
-- `POST /api/wallet/topup`: top up current user's wallet. Request body must contain a field `amount`. This number must be a positive integer.
+- `POST /api/wallet/topup`: top up current user's wallet. Request body must contain `password` and `amount`. A positive `amount` represents "topping-up", while a negative one represents "withdrawing".
 
 ## Transactions
 
