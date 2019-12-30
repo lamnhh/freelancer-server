@@ -289,6 +289,11 @@ async function markAsFinished(username, password, transactionId) {
     };
   }
 
+  await createNotification(
+    transaction.seller,
+    `'${transaction.username}' has confirmed that your transaction with '${transaction.job_name}' is finished. Payment will be sent to you quickly.`
+  );
+
   // Forward payment to seller
   await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
     "system",
