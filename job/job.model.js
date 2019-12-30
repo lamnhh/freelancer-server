@@ -1,6 +1,7 @@
 let db = require("../configs/db");
 let Account = require("../account/account.model");
 let { normaliseString } = require("../configs/types");
+let { createNotification } = require("../notification/noti.model");
 
 /**
  * Returns list of jobs, sorted by date of creation.
@@ -233,8 +234,16 @@ function approve(jobId, status) {
       };
     }
 
-    return db.query(`UPDATE jobs SET status=${status === 1 ? "TRUE" : "FALSE"} WHERE id=$1 `, [
-      jobId
+    // Create notification to freelancer (a.k.a. job.username)
+    let job = normaliseString(rows[0]);
+    let noti =
+      status === 1
+        ? `Congratulations. Your job application for '${job.name}' has been approved.`
+        : `We are deeply sorry. Your job application for '${job.name}' has been rejected`;
+
+    return Promise.all([
+      db.query(`UPDATE jobs SET status=${status === 1 ? "TRUE" : "FALSE"} WHERE id=$1 `, [jobId]),
+      createNotification(job.username, noti)
     ]);
   });
 }
