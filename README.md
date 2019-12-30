@@ -141,7 +141,7 @@ All GET requests will return a single transaction, or a list of transactions, ea
 
 - `POST /api/transaction`: create a new transaction. Request body: `{ jobId, price }`.
 
-- `POST /api/transaction/:id/finish`: mark a transaction as finished.
+- `POST /api/transaction/:id/finish`: mark a transaction as finished. This API requires user to send `password` in request body.
 
 - `POST /api/transaction/:id/review`: add review to a transaction. Request body: `{ review }`.
 

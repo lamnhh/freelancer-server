@@ -1,6 +1,8 @@
 let db = require("../configs/db");
 let Account = require("../account/account.model");
 let { normaliseString } = require("../configs/types");
+let { createNotification } = require("../notification/noti.model");
+let numeral = require("numeral");
 
 /**
  * Find all transactions that user `username` made.
@@ -154,6 +156,19 @@ async function createTransaction(username, jobId, price) {
       }
       throw err;
     });
+
+  // Create notification to both buyer and seller.
+  let formattedPrice = numeral(price).format("$0,0.00");
+  await Promise.all([
+    createNotification(
+      username, // Notification to buyer
+      `You have successfully bought job '${job.name}' from '${job.username}' with price ${formattedPrice}`
+    ),
+    createNotification(
+      job.username, // Notification to seller
+      `'${username}' has bought your job '${job.name}' with price ${formattedPrice}`
+    )
+  ]);
 
   return await db
     .query(
