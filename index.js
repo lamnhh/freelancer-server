@@ -39,6 +39,11 @@ app.use("/api/job-admin", require("./job/job.admin.route"));
 // Routing for admins' frontend
 app.use("/", require("./admin.route"));
 
+// Routing for 404
+app.use(function(req, res, next) {
+  res.sendFile(path.join(__dirname, "public", "404.html"));
+});
+
 app.use(function(err, req, res, next) {
   if (err.http) {
     res.status(err.http).send(err);

@@ -28,9 +28,6 @@ function validateLoginInput(username, password) {
   if (username.length > 16) {
     return "Username not found";
   }
-  if (password.length < 6) {
-    return "Wrong password";
-  }
   return null;
 }
 
