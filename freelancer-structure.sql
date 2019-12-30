@@ -114,3 +114,19 @@ ALTER TABLE messages
 ALTER TABLE wallet_transactions
 	ADD FOREIGN KEY (wallet_from) REFERENCES wallets(id),
 	ADD FOREIGN KEY (wallet_to) REFERENCES wallets(id);
+
+INSERT INTO wallets VALUES (1, 0);
+
+INSERT INTO
+	accounts
+VALUES
+	('system', '$2b$10$ckLfYK52vCxJukbtPOs8POuIzA7IfBavZBekSTrbrdv9E7d7S2ONW', 'GIG System', 'system@gig.com', '0123456780', 'Administrator of GIG', '191908977',	1, TRUE);
+
+INSERT INTO job_types VALUES
+	(1, 'Front-end Developer'),
+	(2, 'Back-end Developer'),
+	(3, 'DevOps'),
+	(4, 'Data Analyst'),
+	(5, 'Designer'),
+	(6, 'Animator'),
+	(7, 'Game Designer');
