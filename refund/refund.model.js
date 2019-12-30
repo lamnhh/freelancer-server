@@ -82,18 +82,28 @@ async function createRefundRequest(username, transactionId, reason) {
  * @param {Boolean} status
  */
 async function approveRequest(transactionId, status) {
-  let request = await db
-    .query("SELECT * FROM refund_requests WHERE transaction_id=$1", [transactionId])
-    .then(function({ rows }) {
-      if (rows.length !== 1) {
-        throw {
-          http: 404,
-          code: "NO_REQUEST",
-          message: "No such request exists"
-        };
-      }
-      return rows[0];
-    });
+  let sql = `
+  SELECT
+    refund_requests.*,
+    jobs.name as job_name,
+    transactions.username as buyer,
+    jobs.username as seller
+  FROM
+    refund_requests
+    JOIN transactions ON (refund_requests.transaction_id = transactions.id)
+    JOIN jobs ON (transactions.job_id = jobs.id)
+  WHERE
+    transaction_id = $1`;
+  let request = await db.query(sql, [transactionId]).then(function({ rows }) {
+    if (rows.length !== 1) {
+      throw {
+        http: 404,
+        code: "NO_REQUEST",
+        message: "No such request exists"
+      };
+    }
+    return normaliseString(rows[0]);
+  });
 
   if (request.status !== null) {
     throw {
@@ -103,7 +113,21 @@ async function approveRequest(transactionId, status) {
     };
   }
 
-  let sql = `UPDATE refund_requests SET status=$1 WHERE transaction_id=$2`;
+  let textStatus = status ? "approved" : "declined";
+
+  // Create notification to buyer
+  await createNotification(
+    request.buyer,
+    `Your refund request for '${request.job_name}' was ${textStatus}`
+  );
+
+  // Create notification to seller
+  await createNotification(
+    request.seller,
+    `The refund request for your '${request.job_name}' from user '${request.buyer}' was ${textStatus}`
+  );
+
+  sql = `UPDATE refund_requests SET status=$1 WHERE transaction_id=$2`;
   return await db.query(sql, [status, transactionId]);
 }
 

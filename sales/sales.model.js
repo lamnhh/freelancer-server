@@ -66,7 +66,7 @@ function summary(count, type = "day") {
       JOIN job_types ON (jobs.type_id = job_types.id)
     WHERE
       transactions.status = TRUE AND
-      refund_requests.transaction_id IS NULL AND 
+      (refund_requests.transaction_id IS NULL OR refund_requests.status IS NOT TRUE) AND
       transactions.finished_at > NOW() - interval '${count} ${type}'
     GROUP BY
       date_trunc('${type}', finished_at)::date, job_types.id
