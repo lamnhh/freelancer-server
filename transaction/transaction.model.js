@@ -1,6 +1,8 @@
 let db = require("../configs/db");
 let Account = require("../account/account.model");
 let { normaliseString } = require("../configs/types");
+let { createNotification } = require("../notification/noti.model");
+let numeral = require("numeral");
 
 /**
  * Find all transactions that user `username` made.
@@ -155,6 +157,19 @@ async function createTransaction(username, jobId, price) {
       throw err;
     });
 
+  // Create notification to both buyer and seller.
+  let formattedPrice = numeral(price).format("$0,0.00");
+  await Promise.all([
+    createNotification(
+      username, // Notification to buyer
+      `You have successfully bought job '${job.name}' from '${job.username}' with price ${formattedPrice}`
+    ),
+    createNotification(
+      job.username, // Notification to seller
+      `'${username}' has bought your job '${job.name}' with price ${formattedPrice}`
+    )
+  ]);
+
   return await db
     .query(
       `INSERT INTO transactions(username, job_id, price, status) VALUES ($1, $2, $3, FALSE) RETURNING *`,
@@ -273,6 +288,11 @@ async function markAsFinished(username, password, transactionId) {
       message: "Cannot mark twice"
     };
   }
+
+  await createNotification(
+    transaction.seller,
+    `'${transaction.username}' has confirmed that your transaction with '${transaction.job_name}' is finished. Payment will be sent to you quickly.`
+  );
 
   // Forward payment to seller
   await db.query("SELECT * FROM transfer_money($1, $2, $3, $4)", [
