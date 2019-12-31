@@ -12,7 +12,7 @@ let { createNotification } = require("../notification/noti.model");
  * @param {Object} filters a dictionary of filters to apply
  */
 function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
-  let { lower = 0, upper = 1000000000, username, search = "" } = filters;
+  let { lower = 0, upper = 1000000000, username, search = "", typeId } = filters;
   let sql = `
   SELECT
     jobs.id as id,
@@ -38,6 +38,7 @@ function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
     ($1 <= job_price_tiers.price) AND (job_price_tiers.price <= $2)
     AND ((jobs.name ILIKE $3) OR (jobs.description ILIKE $3))
     ${username ? "AND (jobs.username = $4)" : ""}
+    ${typeId ? `AND (job_types.id = ${typeId})` : ""}
   GROUP BY
     jobs.id, job_types.name, accounts.username
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}

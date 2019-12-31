@@ -9,7 +9,7 @@ let { isURL } = require("validator");
  * Returns all approved jobs
  */
 router.get("/", function(req, res, next) {
-  let { page = 1, size = 10, username, search = "" } = req.query;
+  let { page = 1, size = 10, username, search = "", typeId } = req.query;
   let lower = parseInt(req.query.lower || 0);
   let upper = parseInt(req.query.upper || 1000000000);
   if (isNaN(lower) || isNaN(upper) || lower < 0 || upper < 0) {
@@ -17,7 +17,7 @@ router.get("/", function(req, res, next) {
     return;
   }
 
-  Job.findAllJobs(page - 1, size, true, { lower, upper, username, search })
+  Job.findAllJobs(page - 1, size, true, { lower, upper, username, search, typeId })
     .then(function(jobList) {
       res.send(jobList);
     })
