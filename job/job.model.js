@@ -20,6 +20,7 @@ function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
     jobs.description as description,
     jobs.cv_url as cv_url,
     jobs.status as status,
+    job_types.id as type_id,
     job_types.name as type,
     accounts.username as username,
     accounts.fullname as fullname,
@@ -40,7 +41,7 @@ function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
     ${username ? "AND (jobs.username = $4)" : ""}
     ${typeId ? `AND (job_types.id = ${typeId})` : ""}
   GROUP BY
-    jobs.id, job_types.name, accounts.username
+    jobs.id, job_types.id, job_types.name, accounts.username
   ${size !== -1 ? `LIMIT ${size} OFFSET ${page * size}` : ""}
   `;
 
@@ -62,7 +63,7 @@ function findAllJobs(page = 0, size = 10, approved = true, filters = {}) {
  * @param {Number} jobId: ID of the requested job
  * @param {Boolean} approved: true/false whether to only return approved jobs or not
  */
-function findById(jobId, approved = true) {
+function findById(jobId, approved = false) {
   let sql = `
   SELECT
     jobs.id as id,
@@ -70,6 +71,7 @@ function findById(jobId, approved = true) {
     jobs.description as description,
     jobs.cv_url as cv_url,
     jobs.status as status,
+    job_types.id as type_id,
     job_types.name as type,
     accounts.username as username,
     accounts.fullname as fullname,
@@ -86,7 +88,7 @@ function findById(jobId, approved = true) {
   WHERE
     jobs.id = $1 ${approved ? "AND jobs.status = TRUE" : ""}
   GROUP BY
-    jobs.id, job_types.name, accounts.username
+    jobs.id,  job_types.id, job_types.name, accounts.username
   `;
 
   return db.query(sql, [jobId]).then(function({ rows }) {
@@ -158,8 +160,10 @@ async function updateJob(jobId, username, patch) {
       throw { http: 404, code: "NO_JOB", message: `No job with ID '${jobId}' exists` };
     }
 
+    let job = normaliseString(rows[0]);
+
     // Only uploader can update a job
-    if (rows[0].username !== username) {
+    if (job.username !== username) {
       throw {
         http: 401,
         code: "NOT_ALLOWED",
@@ -168,7 +172,7 @@ async function updateJob(jobId, username, patch) {
     }
 
     // Can only update when job isn't check by admins, or it was rejected.
-    if (rows[0].status) {
+    if (job.status) {
       throw {
         http: 401,
         code: "NOT_ALLOWED",
@@ -189,7 +193,7 @@ async function updateJob(jobId, username, patch) {
     .join(", ")}
   WHERE id=$${jobModifier.length + 1}
   `;
-  await db.query(sql, jobModifier.map((key) => patch[key]).concat([jobId, username]));
+  await db.query(sql, jobModifier.map((key) => patch[key]).concat([jobId]));
 
   let { price_list: price_tier_list } = patch;
   if (typeof price_tier_list !== "undefined") {
