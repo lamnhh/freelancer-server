@@ -67,7 +67,11 @@ function findHistory(username) {
   let sql = `
   SELECT
     wallet_transactions.id,
-    wallet_transactions.amount,
+    CASE 
+      WHEN wallet_transactions.wallet_from != accounts.wallet_id THEN wallet_transactions.amount
+      WHEN wallet_transactions.wallet_to != accounts.wallet_id THEN -wallet_transactions.amount
+      ELSE wallet_transactions.amount
+    END as amount,
     wallet_transactions.created_at,
     wallet_transactions.content
   FROM
@@ -77,7 +81,9 @@ function findHistory(username) {
       wallet_transactions.wallet_to = accounts.wallet_id
     )
   WHERE
-    accounts.username=$1`;
+    accounts.username=$1
+  ORDER BY
+    created_at DESC`;
   return db.query(sql, [username]).then(function({ rows }) {
     return rows.map(normaliseString);
   });
