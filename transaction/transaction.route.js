@@ -9,7 +9,8 @@ let { isString } = require("../configs/types");
  */
 router.get("/", tokenValidator, function(req, res, next) {
   let { username } = req.body;
-  Transaction.findAllTransactions(username)
+  let { finished, seller } = req.query;
+  Transaction.findAllTransactions(username, finished == 1, seller)
     .then(function(transactionList) {
       res.send(transactionList);
     })

@@ -7,8 +7,9 @@ let numeral = require("numeral");
 /**
  * Find all transactions that user `username` made.
  * @param {String} username
+ * @param {Boolean} finished
  */
-function findAllTransactions(username) {
+function findAllTransactions(username, finished, seller) {
   let sql = `
   SELECT
     transactions.id as id,
@@ -40,7 +41,9 @@ function findAllTransactions(username) {
     JOIN accounts ON (jobs.username = accounts.username)
     LEFT JOIN refund_requests ON (refund_requests.transaction_id = transactions.id)
   WHERE
-    transactions.username=$1
+    (transactions.username=$1 OR accounts.username=$1) AND
+    transactions.status IS ${finished ? "TRUE" : "FALSE"}
+    ${seller ? `AND accounts.username = '${seller}'` : ""}
   ORDER BY
     created_at DESC`;
   return db.query(sql, [username]).then(function({ rows }) {
