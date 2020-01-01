@@ -42,6 +42,10 @@ function init(server) {
       next(new Error("Authentication Error"));
     }
   }).on("connection", function(client) {
+    Message.findUsersInChatHistory(client.sender).then(function(userList) {
+      client.emit("user-list", userList);
+    });
+
     // Request to create chat room with `receiver`.
     client.on("chat-with", function(receiver) {
       let roomName = generateRoomName(client.sender, receiver);

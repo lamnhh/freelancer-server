@@ -11,7 +11,7 @@ function findHistory(sender, receiver) {
   SELECT *
   FROM messages
   WHERE (username_from = $1 AND username_to = $2) OR (username_from = $2 AND username_to = $1)
-  ORDER BY created_at DESC
+  ORDER BY created_at ASC
   `;
   return db.query(sql, [sender, receiver]).then(function({ rows }) {
     return rows.map(normaliseString);
@@ -34,7 +34,30 @@ function sendMessage(sender, receiver, content) {
   });
 }
 
+/**
+ * Find all user that has chatted with the current user
+ * @param {String} sender Username of current user
+ */
+function findUsersInChatHistory(sender) {
+  let sql = `
+  SELECT
+    DISTINCT
+    CASE 
+      WHEN username_from = $1 THEN username_to
+      ELSE username_from
+    END as username
+  FROM
+    messages
+  WHERE
+    username_from != 'system' AND
+    (username_from = $1 OR username_to = $1)`;
+  return db.query(sql, [sender]).then(function({ rows }) {
+    return rows.map(normaliseString);
+  });
+}
+
 module.exports = {
   findHistory,
-  sendMessage
+  sendMessage,
+  findUsersInChatHistory
 };
