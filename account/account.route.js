@@ -64,7 +64,8 @@ router.get("/:username", function(req, res, next) {
     .then(function(user) {
       res.send({
         username,
-        fullname: user.fullname
+        fullname: user.fullname,
+        bio: user.bio
       });
     })
     .catch(next);
@@ -122,6 +123,34 @@ router.patch("/", tokenValidator, function(req, res, next) {
         next(err);
       }
     });
+});
+
+/**
+ * GET /api/account/:username/review
+ * Find all reviews of all jobs of user `username`.
+ */
+router.get("/:username/review", function(req, res, next) {
+  let username = req.params.username;
+
+  Account.findReview(username)
+    .then(function(reviewList) {
+      res.send(reviewList);
+    })
+    .catch(next);
+});
+
+/**
+ * GET /api/account/:username/skill
+ * Find all skills of user `username`.
+ */
+router.get("/:username/skill", function(req, res, next) {
+  let username = req.params.username;
+
+  Account.findSkill(username)
+    .then(function(skillList) {
+      res.send(skillList);
+    })
+    .catch(next);
 });
 
 module.exports = router;

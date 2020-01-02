@@ -75,6 +75,7 @@ function findById(jobId, approved = false) {
     job_types.name as type,
     accounts.username as username,
     accounts.fullname as fullname,
+    accounts.bio as user_bio,
     json_agg(
       json_build_object(
         'price', job_price_tiers.price,
@@ -253,10 +254,33 @@ function approve(jobId, status) {
   });
 }
 
+/**
+ * Find all reviews a job `jobId`
+ * @param {Number} jobId
+ */
+function findReview(jobId) {
+  let sql = `
+  SELECT
+    username,
+    finished_at as created_at,
+    review as content
+  FROM
+    transactions
+  WHERE
+    transactions.review IS NOT NULL AND job_id = $1
+  ORDER BY
+    transactions.finished_at;`;
+
+  return db.query(sql, [jobId]).then(function({ rows }) {
+    return rows.map(normaliseString);
+  });
+}
+
 module.exports = {
   findAllJobs,
   findById,
   createJob,
   updateJob,
-  approve
+  approve,
+  findReview
 };

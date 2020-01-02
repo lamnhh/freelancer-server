@@ -99,9 +99,60 @@ function updateInformation(username, patch) {
     });
 }
 
+/**
+ * Find all reviews of all jobs of user `username`.
+ * @param {String} username
+ */
+function findReview(username) {
+  let sql = `
+  SELECT
+    transactions.username,
+    transactions.finished_at as created_at,
+    review as content,
+    json_build_object(
+      'name', RTRIM(jobs.name),
+      'description', jobs.description,
+      'price', job_price_tiers.price,
+      'price_description', job_price_tiers.description
+    ) as job
+  FROM
+    transactions
+    JOIN jobs ON (transactions.job_id = jobs.id)
+    JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
+  WHERE
+    review IS NOT NULL AND jobs.username = $1;`;
+
+  return db.query(sql, [username]).then(function({ rows }) {
+    return rows.map(normaliseString);
+  });
+}
+
+/**
+ * Find all skills of user `username`.
+ * @param {String} username
+ */
+function findSkill(username) {
+  let sql = `
+  SELECT
+    job_types.id,
+    RTRIM(job_types.name) as name
+  FROM
+    jobs
+    JOIN job_types ON (jobs.type_id = job_types.id)
+  WHERE
+    username = $1
+  GROUP BY
+    job_types.id;`;
+  return db.query(sql, [username]).then(function({ rows }) {
+    return rows;
+  });
+}
+
 module.exports = {
   createAccount,
   login,
   findByUsername,
-  updateInformation
+  updateInformation,
+  findReview,
+  findSkill
 };
