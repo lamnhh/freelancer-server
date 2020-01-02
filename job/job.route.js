@@ -158,4 +158,22 @@ router.patch("/:id", tokenValidator, function(req, res, next) {
     .catch(next);
 });
 
+/**
+ * GET /api/job/:id/review
+ * Return all reviews of a job
+ */
+router.get("/:id/review", function(req, res, next) {
+  let jobId = parseInt(req.params.id);
+  if (isNaN(jobId)) {
+    next({ http: 400, code: "INVALID_ID", message: "Invalid job ID" });
+    return;
+  }
+
+  Job.findReview(jobId)
+    .then(function(reviewList) {
+      res.send(reviewList);
+    })
+    .catch(next);
+});
+
 module.exports = router;
