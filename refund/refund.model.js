@@ -14,10 +14,12 @@ async function createRefundRequest(username, transactionId, reason) {
   SELECT 
     transactions.*,
     jobs.name as job_name,
-    jobs.username as seller
+    jobs.username as seller,
+    refund_requests.transaction_id as refund_id
   FROM
     transactions
     JOIN jobs ON (transactions.job_id = jobs.id)
+    LEFT JOIN refund_requests ON (transactions.id = refund_requests.transaction_id)
   WHERE
     transactions.id = $1;`;
   let transaction = await db.query(sql, [transactionId]).then(function({ rows }) {
@@ -49,8 +51,17 @@ async function createRefundRequest(username, transactionId, reason) {
     };
   }
 
-  // Request for refund can only be made within 3 days after transaction is finished.
+  // Only allow refund ONE time
+  if (transaction.refund_id) {
+    throw {
+      http: 405,
+      code: "NOT_ALLOWED",
+      message: "Another refund request has been submitted, cannot submit again"
+    };
+  }
+
   if (moment().diff(transaction.finished_at) > 86400000 * 3) {
+    // Request for refund can only be made within 3 days after transaction is finished.
     throw {
       http: 405,
       code: "NOT_ALLOWED",

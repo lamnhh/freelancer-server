@@ -71,6 +71,8 @@ function findById(username, transactionId) {
     transactions.job_id as job_id,
     jobs.name as job_name,
     jobs.description as job_description,
+    job_types.name as type,
+    jobs.cv_url as cv_url,
     json_build_object(
       'username', accounts.username,
       'fullname', accounts.fullname
@@ -89,6 +91,7 @@ function findById(username, transactionId) {
     transactions
     JOIN jobs ON (transactions.job_id = jobs.id)
     JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
+    JOIN job_types ON (jobs.type_id = job_types.id)
     JOIN accounts ON (jobs.username = accounts.username)
     LEFT JOIN refund_requests ON (refund_requests.transaction_id = transactions.id)
   WHERE
