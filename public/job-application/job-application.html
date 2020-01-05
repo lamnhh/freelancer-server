@@ -245,7 +245,7 @@
           </div>
         `;
       }));
-      $(".job-description").html(job.description);
+      $(".job-description").html(job.description.split("\n").join("<br>"));
       $("#job-modal").modal();
     }
 
@@ -280,8 +280,15 @@
           {
             targets: 4,
             data: null,
-            render: function (_, _, row, meta) {
-              return `<button class="btn btn-primary" onclick='viewJob(${JSON.stringify(row)}, ${meta.row})'>View more</button>`;
+            createdCell: function (td, _, job, rowIndex) {
+              let button = $("<button/>", {
+                class: "btn btn-primary",
+                text: "View more",
+                click: function () {
+                  viewJob(job, rowIndex);
+                }
+              });
+              $(td).html(button);
             }
           }
         ],
