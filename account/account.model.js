@@ -120,7 +120,9 @@ function findReview(username) {
     JOIN jobs ON (transactions.job_id = jobs.id)
     JOIN job_price_tiers ON (transactions.job_id = job_price_tiers.job_id AND transactions.price = job_price_tiers.price)
   WHERE
-    review IS NOT NULL AND jobs.username = $1;`;
+    review IS NOT NULL AND jobs.username = $1
+  ORDER BY
+  transactions.finished_at DESC;`;
 
   return db.query(sql, [username]).then(function({ rows }) {
     return rows.map(normaliseString);

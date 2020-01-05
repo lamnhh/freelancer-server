@@ -269,7 +269,7 @@ function findReview(jobId) {
   WHERE
     transactions.review IS NOT NULL AND job_id = $1
   ORDER BY
-    transactions.finished_at;`;
+    transactions.finished_at DESC;`;
 
   return db.query(sql, [jobId]).then(function({ rows }) {
     return rows.map(normaliseString);
